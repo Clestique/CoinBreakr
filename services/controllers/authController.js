@@ -2,8 +2,6 @@ const User = require('../models/User');
 const { generateToken } = require('../utils/jwt');
 
 // @desc    Register a new user
-// @route   POST /api/auth/signup
-// @access  Public
 const signup = async (req, res) => {
   try {
     const { name, email, password } = req.body;
@@ -73,8 +71,6 @@ const signup = async (req, res) => {
 };
 
 // @desc    Login user
-// @route   POST /api/auth/login
-// @access  Public
 const login = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -148,8 +144,6 @@ const login = async (req, res) => {
 };
 
 // @desc    Get current user profile
-// @route   GET /api/auth/profile
-// @access  Private
 const getProfile = async (req, res) => {
   try {
     const user = req.user; // From auth middleware
@@ -180,8 +174,6 @@ const getProfile = async (req, res) => {
 };
 
 // @desc    Update user profile
-// @route   PUT /api/auth/profile
-// @access  Private
 const updateProfile = async (req, res) => {
   try {
     const { name } = req.body;

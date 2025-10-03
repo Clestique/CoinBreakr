@@ -46,7 +46,7 @@ app.use((req, res, next) => {
 });
 
 // Routes
-app.use('/api', routes);
+app.use('/v1', routes);
 
 // Handle 404 routes
 app.use('*', (req, res) => {

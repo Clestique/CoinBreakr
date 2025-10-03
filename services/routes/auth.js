@@ -5,10 +5,10 @@ const { authenticateToken } = require('../middleware/auth');
 
 // Public routes
 router.post('/signup', signup);
-router.post('/login', login);
+router.post('/', login);
 
 // Protected routes
-router.get('/profile', authenticateToken, getProfile);
-router.put('/profile', authenticateToken, updateProfile);
+router.get('/', authenticateToken, getProfile);
+router.patch('/', authenticateToken, updateProfile);
 
 module.exports = router;
