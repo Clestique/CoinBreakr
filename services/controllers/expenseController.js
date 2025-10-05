@@ -2,10 +2,10 @@ const Expense = require('../models/Expense');
 const User = require('../models/User');
 const Group = require('../models/Group');
 
-// @desc    Create new expense
+// Add new expense
 const createExpense = async (req, res) => {
   try {
-    const { description, amount, currency, splitWith, category, date, groupId } = req.body;
+    const { description, amount, currency, paidBy, splitWith, category, date, groupId } = req.body;
 
     // Validate required fields
     if (!description || !amount || !splitWith || splitWith.length === 0) {
@@ -15,6 +15,9 @@ const createExpense = async (req, res) => {
       });
     }
 
+    // If paidBy is not specified, default to the creator (current user)
+    const payerId = paidBy || req.userId;
+
     // Validate splitWith array structure
     for (const split of splitWith) {
       if (!split.user || !split.amount) {
@@ -23,7 +26,7 @@ const createExpense = async (req, res) => {
           message: 'Each split must have both user and amount'
         });
       }
-      
+
       // Convert string numbers to numbers
       const numericAmount = parseFloat(split.amount);
       if (isNaN(numericAmount)) {
@@ -33,7 +36,7 @@ const createExpense = async (req, res) => {
         });
       }
       split.amount = numericAmount;
-      
+
       if (split.amount < 0) {
         return res.status(400).json({
           success: false,
@@ -51,6 +54,15 @@ const createExpense = async (req, res) => {
       });
     }
 
+    // Calculate total split amount and validate it equals the expense amount
+    const totalSplitAmount = splitWith.reduce((total, split) => total + split.amount, 0);
+    if (Math.abs(totalSplitAmount - numericAmount) > 0.01) {
+      return res.status(400).json({
+        success: false,
+        message: 'Split amounts must equal the total expense amount'
+      });
+    }
+
     // If groupId is provided, validate group membership
     let group = null;
     if (groupId) {
@@ -61,12 +73,40 @@ const createExpense = async (req, res) => {
           message: 'Group not found'
         });
       }
-      
-      // Check if user is a member of the group
+
+      // Check if creator is a member of the group
       if (!group.isMember(req.userId)) {
         return res.status(403).json({
           success: false,
           message: 'You are not a member of this group'
+        });
+      }
+
+      // Check if payer is a member of the group (if different from creator)
+      if (payerId !== req.userId && !group.isMember(payerId)) {
+        return res.status(400).json({
+          success: false,
+          message: 'The person who paid must be a member of the group'
+        });
+      }
+    }
+
+    // Validate payer exists and is accessible
+    const payer = await User.findById(payerId);
+    if (!payer) {
+      return res.status(404).json({
+        success: false,
+        message: 'Payer not found'
+      });
+    }
+
+    // If payer is different from creator, check if they are friends (for non-group expenses)
+    if (!groupId && payerId !== req.userId) {
+      const creator = await User.findById(req.userId);
+      if (!creator.friends.includes(payerId)) {
+        return res.status(400).json({
+          success: false,
+          message: 'The person who paid must be your friend'
         });
       }
     }
@@ -74,39 +114,31 @@ const createExpense = async (req, res) => {
     // Check if all split partners are valid
     const user = await User.findById(req.userId);
     const splitUserIds = splitWith.map(split => split.user);
-    
+
     for (const userId of splitUserIds) {
-      // Allow the person who paid to split with themselves
-      if (userId !== req.userId.toString()) {
-        if (groupId) {
-          // For group expenses, check if user is a group member
-          if (!group.isMember(userId)) {
-            return res.status(400).json({
-              success: false,
-              message: 'All split partners must be members of the group'
-            });
-          }
-        } else {
-          // For individual expenses, check if user is a friend
-          if (!user.friends.includes(userId)) {
-            return res.status(400).json({
-              success: false,
-              message: 'All split partners must be your friends'
-            });
-          }
+      if (groupId) {
+        // For group expenses, check if user is a group member
+        if (!group.isMember(userId)) {
+          return res.status(400).json({
+            success: false,
+            message: 'All split partners must be members of the group'
+          });
+        }
+      } else {
+        // For individual expenses, check if user is a friend or the creator/payer
+        // Convert all IDs to strings for comparison
+        const userIdStr = userId.toString();
+        const reqUserIdStr = req.userId.toString();
+        const payerIdStr = payerId.toString();
+        const friendsStrArray = user.friends.map(friendId => friendId.toString());
+
+        if (userIdStr !== reqUserIdStr && userIdStr !== payerIdStr && !friendsStrArray.includes(userIdStr)) {
+          return res.status(400).json({
+            success: false,
+            message: 'All split partners must be your friends, yourself, or the person who paid'
+          });
         }
       }
-    }
-
-    // Calculate total split amount
-    const totalSplitAmount = splitWith.reduce((total, split) => total + split.amount, 0);
-    
-    // Validate that split amounts match the total expense amount
-    if (Math.abs(totalSplitAmount - numericAmount) > 0.01) {
-      return res.status(400).json({
-        success: false,
-        message: 'Split amounts must equal the total expense amount'
-      });
     }
 
     // Validate and parse date
@@ -126,7 +158,8 @@ const createExpense = async (req, res) => {
       description,
       amount: numericAmount,
       currency: currency || 'USD',
-      paidBy: req.userId,
+      createdBy: req.userId,
+      paidBy: payerId,
       splitWith,
       category: category || 'other',
       date: parsedDate,
@@ -136,6 +169,7 @@ const createExpense = async (req, res) => {
     await expense.save();
 
     // Populate the expense with user details
+    await expense.populate('createdBy', 'name email');
     await expense.populate('paidBy', 'name email');
     await expense.populate('splitWith.user', 'name email');
     if (groupId) {
@@ -156,7 +190,7 @@ const createExpense = async (req, res) => {
   }
 };
 
-// @desc    Get user's expenses
+// Get all user's expenses
 const getUserExpenses = async (req, res) => {
   try {
     const { page = 1, limit = 10, friendId, settled } = req.query;
@@ -164,6 +198,7 @@ const getUserExpenses = async (req, res) => {
 
     let query = {
       $or: [
+        { createdBy: req.userId },
         { paidBy: req.userId },
         { 'splitWith.user': req.userId }
       ]
@@ -177,7 +212,9 @@ const getUserExpenses = async (req, res) => {
           {
             $or: [
               { paidBy: req.userId, 'splitWith.user': friendId },
-              { paidBy: friendId, 'splitWith.user': req.userId }
+              { paidBy: friendId, 'splitWith.user': req.userId },
+              { createdBy: req.userId, 'splitWith.user': friendId },
+              { createdBy: friendId, 'splitWith.user': req.userId }
             ]
           }
         ]
@@ -190,6 +227,7 @@ const getUserExpenses = async (req, res) => {
     }
 
     const expenses = await Expense.find(query)
+      .populate('createdBy', 'name email profileImage')
       .populate('paidBy', 'name email profileImage')
       .populate('splitWith.user', 'name email profileImage')
       .sort({ date: -1 })
@@ -216,7 +254,7 @@ const getUserExpenses = async (req, res) => {
   }
 };
 
-// @desc    Get expense by ID
+// Get an expense by ID
 const getExpenseById = async (req, res) => {
   try {
     // Validate MongoDB ObjectId format
@@ -228,6 +266,7 @@ const getExpenseById = async (req, res) => {
     }
 
     const expense = await Expense.findById(req.params.id)
+      .populate('createdBy', 'name email profileImage')
       .populate('paidBy', 'name email profileImage')
       .populate('splitWith.user', 'name email profileImage');
 
@@ -238,9 +277,10 @@ const getExpenseById = async (req, res) => {
       });
     }
 
-    // Check if user is involved in this expense
-    const isInvolved = expense.paidBy._id.toString() === req.userId.toString() || 
-                      expense.splitWith.some(split => split.user._id.toString() === req.userId.toString());
+    // Check if user is involved in this expense (creator, payer, or split partner)
+    const isInvolved = expense.createdBy._id.toString() === req.userId.toString() ||
+      expense.paidBy._id.toString() === req.userId.toString() ||
+      expense.splitWith.some(split => split.user._id.toString() === req.userId.toString());
 
     if (!isInvolved) {
       return res.status(403).json({
@@ -262,7 +302,7 @@ const getExpenseById = async (req, res) => {
   }
 };
 
-// @desc    Update expense
+// Update an expense
 const updateExpense = async (req, res) => {
   try {
     const { description, amount, currency, splitWith, category, date } = req.body;
@@ -276,11 +316,11 @@ const updateExpense = async (req, res) => {
       });
     }
 
-    // Check if user is the one who paid
-    if (expense.paidBy.toString() !== req.userId.toString()) {
+    // Check if user is the creator of the expense
+    if (expense.createdBy.toString() !== req.userId.toString() && expense.paidBy.toString() !== req.userId.toString()) {
       return res.status(403).json({
         success: false,
-        message: 'Only the person who paid can update this expense'
+        message: 'Only the creator or the person who paid can update this expense'
       });
     }
 
@@ -296,7 +336,7 @@ const updateExpense = async (req, res) => {
     if (splitWith) {
       const totalSplitAmount = splitWith.reduce((total, split) => total + split.amount, 0);
       const expenseAmount = amount || expense.amount;
-      
+
       if (Math.abs(totalSplitAmount - expenseAmount) > 0.01) {
         return res.status(400).json({
           success: false,
@@ -317,8 +357,9 @@ const updateExpense = async (req, res) => {
         ...(date && { date: new Date(date) })
       },
       { new: true, runValidators: true }
-    ).populate('paidBy', 'name email profileImage')
-     .populate('splitWith.user', 'name email profileImage');
+    ).populate('createdBy', 'name email profileImage')
+      .populate('paidBy', 'name email profileImage')
+      .populate('splitWith.user', 'name email profileImage');
 
     res.status(200).json({
       success: true,
@@ -334,7 +375,7 @@ const updateExpense = async (req, res) => {
   }
 };
 
-// @desc    Delete expense
+// Delete an expense
 const deleteExpense = async (req, res) => {
   try {
     const expense = await Expense.findById(req.params.id);
@@ -346,19 +387,11 @@ const deleteExpense = async (req, res) => {
       });
     }
 
-    // Check if user is the one who paid
-    if (expense.paidBy.toString() !== req.userId.toString()) {
+    // Check if user is the creator of the expense
+    if (expense.createdBy.toString() !== req.userId.toString() && expense.paidBy.toString() !== req.userId.toString()) {
       return res.status(403).json({
         success: false,
-        message: 'Only the person who paid can delete this expense'
-      });
-    }
-
-    // Check if expense is already settled
-    if (expense.isSettled) {
-      return res.status(400).json({
-        success: false,
-        message: 'Cannot delete a settled expense'
+        message: 'Only the creator or the person who paid can delete this expense'
       });
     }
 
@@ -377,17 +410,10 @@ const deleteExpense = async (req, res) => {
   }
 };
 
-// @desc    Settle expense split
+// Settle an expense split
 const settleExpenseSplit = async (req, res) => {
   try {
     const { userId } = req.body;
-
-    if (!userId) {
-      return res.status(400).json({
-        success: false,
-        message: 'User ID is required'
-      });
-    }
 
     const expense = await Expense.findById(req.params.id);
 
@@ -398,41 +424,70 @@ const settleExpenseSplit = async (req, res) => {
       });
     }
 
-    // Check if user is involved in this expense
-    const isInvolved = expense.paidBy.toString() === req.userId.toString() || 
-                      expense.splitWith.some(split => split.user.toString() === req.userId.toString());
+    // Check if user is involved in this expense (creator, payer, or split partner)
+    const isAdmin = expense.createdBy.toString() === req.userId.toString() || expense.paidBy.toString() === req.userId.toString();
+    const isInvolved = expense.splitWith.some(split => split.user.toString() === req.userId.toString()) && !isAdmin;
 
-    if (!isInvolved) {
+    if (!isInvolved && !isAdmin) {
       return res.status(403).json({
         success: false,
         message: 'Not authorized to settle this expense'
       });
     }
 
-    // Check if the user to settle with is in the split
-    const splitToSettle = expense.splitWith.find(split => split.user.toString() === userId);
-    if (!splitToSettle) {
+    if (isAdmin && !userId) {
       return res.status(400).json({
         success: false,
-        message: 'User is not part of this expense split'
-      });
-    }
-
-    // Check if already settled
-    if (splitToSettle.settled) {
-      return res.status(400).json({
-        success: false,
-        message: 'This split is already settled'
+        message: 'User ID is required'
       });
     }
 
     // Settle the split
-    const settled = expense.settleSplit(userId);
-    
+    let settled = false;
+    if (isAdmin) {
+      // Check if the user to settle with is in the split
+      const splitToSettle = expense.splitWith.find(split => split.user.toString() === userId);
+      if (!splitToSettle) {
+        return res.status(400).json({
+          success: false,
+          message: 'User is not part of this expense split'
+        });
+      }
+
+      // Check if already settled
+      if (splitToSettle.settled) {
+        return res.status(400).json({
+          success: false,
+          message: 'This split is already settled'
+        });
+      }
+
+      settled = expense.settleSplit(userId);
+    } else {
+      // Check if the user to settle with is in the split
+      const splitToSettle = expense.splitWith.find(split => split.user.toString() === req.userId);
+      if (!splitToSettle) {
+        return res.status(400).json({
+          success: false,
+          message: 'User is not part of this expense split'
+        });
+      }
+
+      // Check if already settled
+      if (splitToSettle.settled) {
+        return res.status(400).json({
+          success: false,
+          message: 'This split is already settled'
+        });
+      }
+      settled = expense.settleSplit(req.userId);
+    }
+
     if (settled) {
       await expense.save();
-      
+
       // Populate the updated expense
+      await expense.populate('createdBy', 'name email profileImage');
       await expense.populate('paidBy', 'name email profileImage');
       await expense.populate('splitWith.user', 'name email profileImage');
 
@@ -456,53 +511,7 @@ const settleExpenseSplit = async (req, res) => {
   }
 };
 
-// @desc    Get expenses between two users
-const getExpensesBetweenUsers = async (req, res) => {
-  try {
-    const { friendId } = req.params;
-    const { page = 1, limit = 10 } = req.query;
-    const skip = (page - 1) * limit;
-
-    // Check if users are friends
-    const user = await User.findById(req.userId);
-    if (!user.friends.includes(friendId)) {
-      return res.status(400).json({
-        success: false,
-        message: 'User is not your friend'
-      });
-    }
-
-    const expenses = await Expense.getExpensesBetweenUsers(req.userId, friendId)
-      .sort({ date: -1 })
-      .skip(skip)
-      .limit(parseInt(limit));
-
-    const total = await Expense.countDocuments({
-      $or: [
-        { paidBy: req.userId, 'splitWith.user': friendId },
-        { paidBy: friendId, 'splitWith.user': req.userId }
-      ]
-    });
-
-    res.status(200).json({
-      success: true,
-      data: expenses,
-      pagination: {
-        current: parseInt(page),
-        pages: Math.ceil(total / limit),
-        total
-      }
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: 'Server error',
-      error: error.message
-    });
-  }
-};
-
-// @desc    Get group expenses
+// Get group expenses
 const getGroupExpenses = async (req, res) => {
   try {
     const { groupId } = req.params;
@@ -534,6 +543,7 @@ const getGroupExpenses = async (req, res) => {
     }
 
     const expenses = await Expense.find(query)
+      .populate('createdBy', 'name email profileImage')
       .populate('paidBy', 'name email profileImage')
       .populate('splitWith.user', 'name email profileImage')
       .populate('group', 'name')
@@ -561,7 +571,7 @@ const getGroupExpenses = async (req, res) => {
   }
 };
 
-// @desc    Get group balance summary
+// Get group balance summary
 const getGroupBalance = async (req, res) => {
   try {
     const { groupId } = req.params;
@@ -623,7 +633,6 @@ module.exports = {
   updateExpense,
   deleteExpense,
   settleExpenseSplit,
-  getExpensesBetweenUsers,
   getGroupExpenses,
   getGroupBalance
 };

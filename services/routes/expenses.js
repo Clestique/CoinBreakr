@@ -8,7 +8,6 @@ const {
   updateExpense,
   deleteExpense,
   settleExpenseSplit,
-  getExpensesBetweenUsers,
   getGroupExpenses,
   getGroupBalance
 } = require('../controllers/expenseController');
@@ -18,9 +17,6 @@ router.post('/', authenticateToken, createExpense);
 
 // @route   GET /api/expenses
 router.get('/', authenticateToken, getUserExpenses);
-
-// @route   GET /api/expenses/between/:friendId
-router.get('/between/:friendId', authenticateToken, getExpensesBetweenUsers);
 
 // @route   GET /api/expenses/:id
 router.get('/:id', authenticateToken, getExpenseById);
@@ -32,7 +28,7 @@ router.put('/:id', authenticateToken, updateExpense);
 router.delete('/:id', authenticateToken, deleteExpense);
 
 // @route   POST /api/expenses/:id/settle
-router.post('/:id/settle', authenticateToken, settleExpenseSplit);
+router.patch('/:id/settle', authenticateToken, settleExpenseSplit);
 
 // @route   GET /api/expenses/group/:groupId
 router.get('/group/:groupId', authenticateToken, getGroupExpenses);

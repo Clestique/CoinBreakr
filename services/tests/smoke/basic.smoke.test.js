@@ -126,7 +126,7 @@ describe('Smoke Tests - Basic Functionality', () => {
 
     it('should search for users', async () => {
       const response = await request(app)
-        .get('/v1/users/search?q=Smoke')
+        .get('/v1/users/search?query=Smoke')
         .set('Authorization', `Bearer ${token}`)
         .expect(200);
 
@@ -156,7 +156,7 @@ describe('Smoke Tests - Basic Functionality', () => {
   });
 
   describe('Expense Management Smoke Tests', () => {
-    let token, friendToken, friendId;
+    let token, friendToken, friendId, userId;
 
     beforeEach(async () => {
       // Create main user
@@ -193,6 +193,7 @@ describe('Smoke Tests - Basic Functionality', () => {
         .post('/v1/auth/login')
         .send({ email: 'smoketest@example.com', password: 'password123' });
       token = loginResponse.body.data.token;
+      userId = loginResponse.body.data.user.id;
 
       // Add friend
       await request(app)
@@ -310,8 +311,12 @@ describe('Smoke Tests - Basic Functionality', () => {
         amount: 40.00,
         splitWith: [
           {
+            user: userId,
+            amount: 20.00
+          },
+          {
             user: friendId,
-            amount: 40.00
+            amount: 20.00
           }
         ]
       };
@@ -326,7 +331,7 @@ describe('Smoke Tests - Basic Functionality', () => {
 
       // Settle the expense
       const response = await request(app)
-        .post(`/v1/expenses/${expenseId}/settle`)
+        .patch(`/v1/expenses/${expenseId}/settle`)
         .set('Authorization', `Bearer ${token}`)
         .send({ userId: friendId })
         .expect(200);

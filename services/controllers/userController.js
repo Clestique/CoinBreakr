@@ -1,7 +1,9 @@
 const mongoose = require('mongoose');
 const User = require('../models/User');
 const Expense = require('../models/Expense');
+const bcrypt = require('bcryptjs');
 
+// Auth & User Profile
 const getUserProfile = async (req, res) => {
     try {
         const user = await User.findById(req.userId).populate('name email profileImage phoneNumber').select('-password');
@@ -26,11 +28,44 @@ const getUserProfile = async (req, res) => {
     }
 };
 
+const updateUserProfile = async (req, res) => {
+    try {
+        const { name, password, profileImage, phoneNumber } = req.body;
+        if (!name && !password && !profileImage && !phoneNumber) {
+            return res.status(400).json({
+                success: false,
+                message: 'At least one field is required'
+            });
+        }
+
+        // Update the user profile
+        name && await User.findByIdAndUpdate(req.userId, { name }, { new: true });
+        phoneNumber && await User.findByIdAndUpdate(req.userId, { phoneNumber }, { new: true });       
+        profileImage && await User.findByIdAndUpdate(req.userId, { profileImage }, { new: true });
+        // Update the user password
+        if (password) {
+            const salt = await bcrypt.genSalt(10);
+            const hashedPassword = await bcrypt.hash(password, salt);
+            await User.findByIdAndUpdate(req.userId, { password: hashedPassword }, { new: true });
+        }
+
+        return res.status(200).json({
+            success: true,
+            message: 'User profile updated successfully'
+        });
+        } catch (error) {
+            res.status(500).json({
+            success: false,
+            message: 'Server error',
+            error: error.message
+        });
+    }
+};
+
 const searchUsers = async (req, res) => {
     try {
-        const { q } = req.query;
-
-        if (!q || q.trim().length < 2) {
+        const userId = req.query.userId;
+        if (!userId || userId.trim().length < 2) {
             return res.status(400).json({
                 success: false,
                 message: 'Search term must be at least 2 characters long'
@@ -38,7 +73,7 @@ const searchUsers = async (req, res) => {
         }
 
         // Escape special regex characters to prevent errors
-        const escapedQuery = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const escapedQuery = userId.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
         const users = await User.find({
             $and: [
@@ -51,6 +86,13 @@ const searchUsers = async (req, res) => {
                 }
             ]
         }).select('name email profileImage').limit(20);
+
+        if (users.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: 'User not found'
+            });
+        }
 
         res.json({
             success: true,
@@ -65,6 +107,7 @@ const searchUsers = async (req, res) => {
     }
 };
 
+// Friends
 const getFriends = async (req, res) => {
     try {
         const user = await User.findById(req.userId)
@@ -86,7 +129,7 @@ const getFriends = async (req, res) => {
 
 const addFriend = async (req, res) => {
     try {
-        const { friendId } = req.body;
+        const friendId = req.body.friendId;
 
         if (!friendId) {
             return res.status(400).json({
@@ -156,13 +199,23 @@ const addFriend = async (req, res) => {
 
 const removeFriend = async (req, res) => {
     try {
-        const { friendId } = req.params;
+        const friendId = req.params.friendId;
 
         // Validate ObjectId format
         try {
             new mongoose.Types.ObjectId(friendId);
         } catch (error) {
-            return res.status(204).send();
+            return res.status(400).json({
+                success: false,
+                message: 'Invalid friendId format'
+            });
+        }
+
+        if (friendId.toString() === req.userId.toString()) {
+            return res.status(400).json({
+                success: false,
+                message: 'Cannot remove yourself as a friend'
+            });
         }
 
         // Remove friend from both users
@@ -174,7 +227,10 @@ const removeFriend = async (req, res) => {
             $pull: { friends: req.userId }
         });
 
-        res.status(204).send();
+        res.status(200).json({
+            success: true,
+            message: 'Friend removed successfully'
+        });
     } catch (error) {
         res.status(500).json({
             success: false,
@@ -184,6 +240,7 @@ const removeFriend = async (req, res) => {
     }
 };
 
+// Balances
 const getBalanceWithFriend = async (req, res) => {
     try {
         const { friendId } = req.params;
@@ -254,6 +311,7 @@ const getAllBalances = async (req, res) => {
 
 module.exports = {
     getUserProfile,
+    updateUserProfile,
     searchUsers,
     addFriend,
     removeFriend,

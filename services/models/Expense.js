@@ -18,6 +18,11 @@ const expenseSchema = new mongoose.Schema({
     uppercase: true,
     maxlength: [3, 'Currency code must be 3 characters']
   },
+  createdBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: [true, 'Please specify who created this expense']
+  },
   paidBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
@@ -76,12 +81,33 @@ const expenseSchema = new mongoose.Schema({
 // Update the updatedAt field before saving
 expenseSchema.pre('save', function(next) {
   this.updatedAt = Date.now();
+  
+  // Validate that split amounts equal total expense amount
+  const totalSplitAmount = this.splitWith.reduce((total, split) => total + split.amount, 0);
+  if (Math.abs(totalSplitAmount - this.amount) > 0.01) {
+    const error = new Error('Split amounts must equal the total expense amount');
+    error.name = 'ValidationError';
+    return next(error);
+  }
+  
   next();
 });
 
 // Update the updatedAt field before findOneAndUpdate
 expenseSchema.pre('findOneAndUpdate', function(next) {
   this.set({ updatedAt: Date.now() });
+  
+  // Validate split amounts if they're being updated
+  const update = this.getUpdate();
+  if (update.splitWith && update.amount !== undefined) {
+    const totalSplitAmount = update.splitWith.reduce((total, split) => total + split.amount, 0);
+    if (Math.abs(totalSplitAmount - update.amount) > 0.01) {
+      const error = new Error('Split amounts must equal the total expense amount');
+      error.name = 'ValidationError';
+      return next(error);
+    }
+  }
+  
   next();
 });
 
@@ -92,7 +118,7 @@ expenseSchema.virtual('totalSplitAmount').get(function() {
 
 // Virtual to check if expense is fully settled
 expenseSchema.virtual('isFullySettled').get(function() {
-  return this.splitWith.every(split => split.settled);
+  return this.splitWith.every(split => split.settled && split.user.toString() !== split.paidBy.toString());
 });
 
 // Instance method to settle a specific split
@@ -103,7 +129,7 @@ expenseSchema.methods.settleSplit = function(userId) {
     split.settledAt = new Date();
     
     // Check if all splits are settled
-    const allSettled = this.splitWith.every(s => s.settled);
+    const allSettled = this.splitWith.every(s => s.settled && s.user.toString() !== s.paidBy.toString());
     if (allSettled) {
       this.isSettled = true;
       this.settledAt = new Date();
@@ -136,7 +162,7 @@ expenseSchema.statics.getExpensesBetweenUsers = function(userId1, userId2) {
       { paidBy: userId1, 'splitWith.user': userId2 },
       { paidBy: userId2, 'splitWith.user': userId1 }
     ]
-  }).populate('paidBy', 'name email').populate('splitWith.user', 'name email');
+  }).populate('createdBy', 'name email').populate('paidBy', 'name email').populate('splitWith.user', 'name email');
 };
 
 // Static method to get user's balance with another user
@@ -147,15 +173,15 @@ expenseSchema.statics.getBalanceWithUser = async function(userId1, userId2) {
   
   expenses.forEach(expense => {
     if (expense.paidBy._id.toString() === userId1.toString()) {
-      // User1 paid, so they are owed money
+      // User1 paid, so they are owed money from user2
       const split = expense.splitWith.find(s => s.user._id.toString() === userId2.toString());
-      if (split) {
+      if (split && !split.settled) {
         balance += split.amount;
       }
     } else {
       // User2 paid, so user1 owes money
       const split = expense.splitWith.find(s => s.user._id.toString() === userId1.toString());
-      if (split) {
+      if (split && !split.settled) {
         balance -= split.amount;
       }
     }
@@ -167,6 +193,7 @@ expenseSchema.statics.getBalanceWithUser = async function(userId1, userId2) {
 // Static method to get expenses for a group
 expenseSchema.statics.getGroupExpenses = function(groupId) {
   return this.find({ group: groupId })
+    .populate('createdBy', 'name email profileImage')
     .populate('paidBy', 'name email profileImage')
     .populate('splitWith.user', 'name email profileImage')
     .populate('group', 'name')
@@ -181,13 +208,12 @@ expenseSchema.statics.getUserGroupBalance = async function(userId, groupId) {
   
   expenses.forEach(expense => {
     if (expense.paidBy._id.toString() === userId.toString()) {
-      // User paid, so they are owed money
-      const split = expense.splitWith.find(s => s.user._id.toString() === userId.toString());
-      if (split) {
-        balance += split.amount;
-      }
+      // User paid - they are owed the total amount minus their own share
+      const userSplit = expense.splitWith.find(s => s.user._id.toString() === userId.toString());
+      const userShare = userSplit ? userSplit.amount : 0;
+      balance += (expense.amount - userShare);
     } else {
-      // Someone else paid, check if user owes money
+      // Someone else paid - check if user owes money
       const split = expense.splitWith.find(s => s.user._id.toString() === userId.toString());
       if (split) {
         balance -= split.amount;

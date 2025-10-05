@@ -14,7 +14,7 @@ const { authenticateToken } = require('../middleware/auth');
 
 const router = express.Router();
 
-// Validation rules
+// Validation rules for creating a group
 const createGroupValidation = [
   body('name')
     .trim()
@@ -29,6 +29,7 @@ const createGroupValidation = [
     .withMessage('Description cannot be more than 500 characters')
 ];
 
+// Validation rules for updating a group
 const updateGroupValidation = [
   body('name')
     .optional()
@@ -44,6 +45,7 @@ const updateGroupValidation = [
     .withMessage('Description cannot be more than 500 characters')
 ];
 
+// Validation rules for adding a member to a group
 const addMemberValidation = [
   body('memberEmail')
     .isEmail()
@@ -55,44 +57,28 @@ const addMemberValidation = [
     .withMessage('Role must be either member or admin')
 ];
 
-// @route   POST /api/groups
-// @desc    Create a new group
-// @access  Private
+// Create a new group
 router.post('/', authenticateToken, createGroupValidation, createGroup);
 
-// @route   GET /api/groups
-// @desc    Get all groups for the authenticated user
-// @access  Private
+// Get all groups for the authenticated user
 router.get('/', authenticateToken, getGroups);
 
-// @route   GET /api/groups/:id
-// @desc    Get a specific group
-// @access  Private
+// Get a specific group
 router.get('/:id', authenticateToken, getGroup);
 
-// @route   PUT /api/groups/:id
-// @desc    Update a group
-// @access  Private
+// Update a group
 router.put('/:id', authenticateToken, updateGroupValidation, updateGroup);
 
-// @route   DELETE /api/groups/:id
-// @desc    Delete a group (only creator can delete)
-// @access  Private
+// Delete a group (only creator can delete)
 router.delete('/:id', authenticateToken, deleteGroup);
 
-// @route   POST /api/groups/:id/members
-// @desc    Add a member to the group
-// @access  Private
+// Add a member to the group
 router.post('/:id/members', authenticateToken, addMemberValidation, addMember);
 
-// @route   DELETE /api/groups/:id/members/:memberId
-// @desc    Remove a member from the group
-// @access  Private
+// Remove a member from the group
 router.delete('/:id/members/:memberId', authenticateToken, removeMember);
 
-// @route   DELETE /api/groups/:id/leave
-// @desc    Leave the group (user removes themselves)
-// @access  Private
+// Leave the group (user removes themselves)
 router.delete('/:id/leave', authenticateToken, leaveGroup);
 
 module.exports = router;
