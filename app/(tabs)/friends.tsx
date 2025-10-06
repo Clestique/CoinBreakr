@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -8,6 +8,9 @@ import {
   Dimensions,
   FlatList,
   TextInput,
+  ActivityIndicator,
+  Alert,
+  RefreshControl,
 } from 'react-native';
 import Animated, {
   useSharedValue,
@@ -19,57 +22,94 @@ import Animated, {
 } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { router } from 'expo-router';
+import { FriendsService, Friend } from '../../googleServices/friendsService';
+import AddFriendModal from '../../components/AddFriendModal';
 
 const { width, height } = Dimensions.get('window');
 
-interface Friend {
-  id: string;
-  name: string;
-  email: string;
-  avatar: string;
-  status: 'online' | 'offline';
-  balance: number;
-  lastActivity: string;
-}
-
-interface PendingRequest {
-  id: string;
-  name: string;
-  email: string;
-  avatar: string;
-  type: 'sent' | 'received';
+interface FriendWithBalance extends Friend {
+  balance?: number;
+  balanceMessage?: string;
 }
 
 export default function FriendsScreen() {
-  const [friends, setFriends] = useState<Friend[]>([
-    { id: '1', name: 'Alice Johnson', email: 'alice@example.com', avatar: 'A', status: 'online', balance: 25.50, lastActivity: '2 hours ago' },
-    { id: '2', name: 'Bob Smith', email: 'bob@example.com', avatar: 'B', status: 'offline', balance: -15.75, lastActivity: '1 day ago' },
-    { id: '3', name: 'Carol Davis', email: 'carol@example.com', avatar: 'C', status: 'online', balance: 0, lastActivity: '3 hours ago' },
-    { id: '4', name: 'David Wilson', email: 'david@example.com', avatar: 'D', status: 'offline', balance: 42.20, lastActivity: '2 days ago' },
-  ]);
-
-  const [pendingRequests, setPendingRequests] = useState<PendingRequest[]>([
-    { id: '1', name: 'Emma Brown', email: 'emma@example.com', avatar: 'E', type: 'received' },
-    { id: '2', name: 'Frank Miller', email: 'frank@example.com', avatar: 'F', type: 'sent' },
-  ]);
-
+  const [friends, setFriends] = useState<FriendWithBalance[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeTab, setActiveTab] = useState<'friends' | 'requests'>('friends');
+  const [showAddFriendModal, setShowAddFriendModal] = useState(false);
 
   // Animation values
   const scrollY = useSharedValue(0);
   const headerOpacity = useSharedValue(0);
   const searchBarOpacity = useSharedValue(0);
-  const tabsOpacity = useSharedValue(0);
   const contentOpacity = useSharedValue(0);
 
   useEffect(() => {
+    loadFriends();
     // Start animations
     headerOpacity.value = withDelay(200, withSpring(1));
     searchBarOpacity.value = withDelay(400, withSpring(1));
-    tabsOpacity.value = withDelay(600, withSpring(1));
-    contentOpacity.value = withDelay(800, withSpring(1));
+    contentOpacity.value = withDelay(600, withSpring(1));
   }, []);
+
+  const loadFriends = async () => {
+    try {
+      setLoading(true);
+      const friendsWithBalances = await FriendsService.getFriendsWithBalances();
+      setFriends(friendsWithBalances);
+    } catch (error) {
+      console.error('Load friends error:', error);
+      Alert.alert('Error', 'Failed to load friends. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await loadFriends();
+    setRefreshing(false);
+  }, []);
+
+  const handleFriendAdded = useCallback(() => {
+    loadFriends(); // Refresh the friends list
+  }, []);
+
+  const handleFriendPress = (friend: FriendWithBalance) => {
+    router.push({
+      pathname: '/friend-expenses',
+      params: {
+        friendId: friend._id,
+        friendName: friend.name,
+      },
+    });
+  };
+
+  const handleRemoveFriend = async (friendId: string, friendName: string) => {
+    Alert.alert(
+      'Remove Friend',
+      `Are you sure you want to remove ${friendName} from your friends?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Remove',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await FriendsService.removeFriend(friendId);
+              await loadFriends(); // Refresh the list
+              Alert.alert('Success', `${friendName} has been removed from your friends.`);
+            } catch (error) {
+              console.error('Remove friend error:', error);
+              Alert.alert('Error', 'Failed to remove friend. Please try again.');
+            }
+          },
+        },
+      ]
+    );
+  };
 
   // Animated styles
   const headerAnimatedStyle = useAnimatedStyle(() => ({
@@ -86,11 +126,6 @@ export default function FriendsScreen() {
     transform: [{ translateY: interpolate(searchBarOpacity.value, [0, 1], [30, 0]) }],
   }));
 
-  const tabsAnimatedStyle = useAnimatedStyle(() => ({
-    opacity: tabsOpacity.value,
-    transform: [{ translateY: interpolate(tabsOpacity.value, [0, 1], [30, 0]) }],
-  }));
-
   const contentAnimatedStyle = useAnimatedStyle(() => ({
     opacity: contentOpacity.value,
     transform: [{ translateY: interpolate(contentOpacity.value, [0, 1], [50, 0]) }],
@@ -102,82 +137,88 @@ export default function FriendsScreen() {
     },
   });
 
-  const renderFriend = ({ item }: { item: Friend }) => (
-    <Pressable style={styles.friendItem}>
-      <View style={styles.friendInfo}>
-        <View style={styles.avatarContainer}>
-          <LinearGradient
-            colors={['#667eea', '#764ba2']}
-            style={styles.avatar}
-          >
-            <Text style={styles.avatarText}>{item.avatar}</Text>
-          </LinearGradient>
-          <View style={[styles.statusIndicator, { backgroundColor: item.status === 'online' ? '#4CAF50' : '#ccc' }]} />
-        </View>
-        <View style={styles.friendDetails}>
-          <Text style={styles.friendName}>{item.name}</Text>
-          <Text style={styles.friendEmail}>{item.email}</Text>
-          <Text style={styles.lastActivity}>Last seen {item.lastActivity}</Text>
-        </View>
-      </View>
-      <View style={styles.friendActions}>
-        {item.balance !== 0 && (
-          <View style={[styles.balanceChip, { backgroundColor: item.balance > 0 ? '#E8F5E8' : '#FFE8E8' }]}>
-            <Text style={[styles.balanceText, { color: item.balance > 0 ? '#4CAF50' : '#ff4757' }]}>
-              {item.balance > 0 ? '+' : ''}${Math.abs(item.balance).toFixed(2)}
-            </Text>
+  const renderFriend = ({ item, index }: { item: FriendWithBalance; index: number }) => (
+    <Animated.View
+      style={[
+        styles.friendItem,
+        {
+          opacity: contentOpacity,
+          transform: [
+            {
+              translateY: interpolate(
+                contentOpacity.value,
+                [0, 1],
+                [30 * (index + 1), 0]
+              ),
+            },
+          ],
+        },
+      ]}
+    >
+      <Pressable
+        style={styles.friendContent}
+        onPress={() => handleFriendPress(item)}
+      >
+        <View style={styles.friendInfo}>
+          <View style={styles.avatarContainer}>
+            <LinearGradient
+              colors={['#667eea', '#764ba2']}
+              style={styles.avatar}
+            >
+              <Text style={styles.avatarText}>
+                {item.name.charAt(0).toUpperCase()}
+              </Text>
+            </LinearGradient>
           </View>
-        )}
-        <Pressable style={styles.actionButton}>
-          <Ionicons name="chatbubble" size={20} color="#667eea" />
-        </Pressable>
-        <Pressable style={styles.actionButton}>
-          <Ionicons name="ellipsis-horizontal" size={20} color="#666" />
-        </Pressable>
-      </View>
-    </Pressable>
-  );
-
-  const renderPendingRequest = ({ item }: { item: PendingRequest }) => (
-    <Pressable style={styles.requestItem}>
-      <View style={styles.friendInfo}>
-        <LinearGradient
-          colors={['#FF9800', '#FF5722']}
-          style={styles.avatar}
-        >
-          <Text style={styles.avatarText}>{item.avatar}</Text>
-        </LinearGradient>
-        <View style={styles.friendDetails}>
-          <Text style={styles.friendName}>{item.name}</Text>
-          <Text style={styles.friendEmail}>{item.email}</Text>
-          <Text style={styles.requestType}>
-            {item.type === 'received' ? 'Wants to be friends' : 'Request sent'}
-          </Text>
+          <View style={styles.friendDetails}>
+            <Text style={styles.friendName}>{item.name}</Text>
+            <Text style={styles.friendEmail}>{item.email}</Text>
+            {item.balance !== undefined && item.balance !== 0 && (
+              <Text style={styles.balanceStatus}>
+                {item.balanceMessage || 'You are settled up'}
+              </Text>
+            )}
+          </View>
         </View>
-      </View>
-      <View style={styles.requestActions}>
-        {item.type === 'received' ? (
-          <>
-            <Pressable style={[styles.requestButton, styles.acceptButton]}>
-              <Ionicons name="checkmark" size={16} color="#ffffff" />
-            </Pressable>
-            <Pressable style={[styles.requestButton, styles.declineButton]}>
-              <Ionicons name="close" size={16} color="#ffffff" />
-            </Pressable>
-          </>
-        ) : (
-          <Pressable style={[styles.requestButton, styles.cancelButton]}>
-            <Text style={styles.cancelButtonText}>Cancel</Text>
+        <View style={styles.friendActions}>
+          {item.balance !== undefined && item.balance !== 0 && (
+            <View style={[
+              styles.balanceChip,
+              { backgroundColor: item.balance > 0 ? '#E8F5E8' : '#FFE8E8' }
+            ]}>
+              <Text style={[
+                styles.balanceText,
+                { color: item.balance > 0 ? '#4CAF50' : '#ff4757' }
+              ]}>
+                {item.balance > 0 ? '+' : ''}${Math.abs(item.balance).toFixed(2)}
+              </Text>
+            </View>
+          )}
+          <Pressable
+            style={styles.actionButton}
+            onPress={() => handleRemoveFriend(item._id, item.name)}
+          >
+            <Ionicons name="ellipsis-horizontal" size={20} color="#666" />
           </Pressable>
-        )}
-      </View>
-    </Pressable>
+        </View>
+      </Pressable>
+    </Animated.View>
   );
 
   const filteredFriends = friends.filter(friend =>
     friend.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     friend.email.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <LinearGradient colors={['#667eea', '#764ba2']} style={styles.background} />
+        <ActivityIndicator size="large" color="#ffffff" />
+        <Text style={styles.loadingText}>Loading friends...</Text>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -188,10 +229,21 @@ export default function FriendsScreen() {
         showsVerticalScrollIndicator={false}
         onScroll={scrollHandler}
         scrollEventThrottle={16}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            tintColor="#ffffff"
+            colors={['#ffffff']}
+          />
+        }
       >
         <Animated.View style={[styles.header, headerAnimatedStyle]}>
           <Text style={styles.headerTitle}>Friends</Text>
-          <Pressable style={styles.addButton}>
+          <Pressable
+            style={styles.addButton}
+            onPress={() => setShowAddFriendModal(true)}
+          >
             <Ionicons name="person-add" size={24} color="#ffffff" />
           </Pressable>
         </Animated.View>
@@ -206,68 +258,61 @@ export default function FriendsScreen() {
               onChangeText={setSearchQuery}
               placeholderTextColor="#999"
             />
+            {searchQuery.length > 0 && (
+              <Pressable
+                style={styles.clearButton}
+                onPress={() => setSearchQuery('')}
+              >
+                <Ionicons name="close-circle" size={20} color="#999" />
+              </Pressable>
+            )}
           </View>
         </Animated.View>
 
-        <Animated.View style={[styles.tabsContainer, tabsAnimatedStyle]}>
-          <Pressable
-            style={[styles.tab, activeTab === 'friends' && styles.activeTab]}
-            onPress={() => setActiveTab('friends')}
-          >
-            <Text style={[styles.tabText, activeTab === 'friends' && styles.activeTabText]}>
-              Friends ({friends.length})
-            </Text>
-          </Pressable>
-          <Pressable
-            style={[styles.tab, activeTab === 'requests' && styles.activeTab]}
-            onPress={() => setActiveTab('requests')}
-          >
-            <Text style={[styles.tabText, activeTab === 'requests' && styles.activeTabText]}>
-              Requests ({pendingRequests.length})
-            </Text>
-          </Pressable>
-        </Animated.View>
-
         <Animated.View style={[styles.contentContainer, contentAnimatedStyle]}>
-          {activeTab === 'friends' ? (
-            <View style={styles.friendsContainer}>
-              {filteredFriends.length > 0 ? (
-                filteredFriends.map((friend) => (
-                  <View key={friend.id}>
-                    {renderFriend({ item: friend })}
-                  </View>
-                ))
-              ) : (
-                <View style={styles.emptyState}>
-                  <Ionicons name="people" size={64} color="#ccc" />
-                  <Text style={styles.emptyStateTitle}>No friends found</Text>
-                  <Text style={styles.emptyStateSubtitle}>
-                    {searchQuery ? 'Try a different search term' : 'Add some friends to get started'}
-                  </Text>
-                </View>
-              )}
-            </View>
+          <Text style={styles.sectionTitle}>
+            Your Friends ({friends.length})
+          </Text>
+          
+          {filteredFriends.length > 0 ? (
+            <FlatList
+              data={filteredFriends}
+              renderItem={renderFriend}
+              keyExtractor={(item) => item._id}
+              showsVerticalScrollIndicator={false}
+              scrollEnabled={false}
+              contentContainerStyle={styles.friendsList}
+            />
           ) : (
-            <View style={styles.requestsContainer}>
-              {pendingRequests.length > 0 ? (
-                pendingRequests.map((request) => (
-                  <View key={request.id}>
-                    {renderPendingRequest({ item: request })}
-                  </View>
-                ))
-              ) : (
-                <View style={styles.emptyState}>
-                  <Ionicons name="mail" size={64} color="#ccc" />
-                  <Text style={styles.emptyStateTitle}>No pending requests</Text>
-                  <Text style={styles.emptyStateSubtitle}>
-                    All caught up! No friend requests at the moment.
-                  </Text>
-                </View>
+            <View style={styles.emptyState}>
+              <Ionicons name="people" size={64} color="#ccc" />
+              <Text style={styles.emptyStateTitle}>
+                {searchQuery ? 'No friends found' : 'No friends yet'}
+              </Text>
+              <Text style={styles.emptyStateSubtitle}>
+                {searchQuery 
+                  ? 'Try a different search term' 
+                  : 'Add some friends to start splitting expenses'
+                }
+              </Text>
+              {!searchQuery && (
+                <Pressable
+                  style={styles.addFriendButton}
+                  onPress={() => setShowAddFriendModal(true)}
+                >
+                  <Text style={styles.addFriendButtonText}>Add Your First Friend</Text>
+                </Pressable>
               )}
             </View>
           )}
         </Animated.View>
       </Animated.ScrollView>
+
+      <AddFriendModal
+        visible={showAddFriendModal}
+        onClose={() => setShowAddFriendModal(false)}
+        onFriendAdded={handleFriendAdded}
+      />
     </View>
   );
 }
@@ -283,6 +328,16 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    color: '#ffffff',
+    fontSize: 16,
+    marginTop: 16,
   },
   scrollView: {
     flex: 1,
@@ -328,30 +383,8 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#333',
   },
-  tabsContainer: {
-    flexDirection: 'row',
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    marginHorizontal: 20,
-    borderRadius: 15,
-    padding: 4,
-    marginBottom: 20,
-  },
-  tab: {
-    flex: 1,
-    paddingVertical: 12,
-    alignItems: 'center',
-    borderRadius: 12,
-  },
-  activeTab: {
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
-  },
-  tabText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: 'rgba(255, 255, 255, 0.7)',
-  },
-  activeTabText: {
-    color: '#667eea',
+  clearButton: {
+    marginLeft: 10,
   },
   contentContainer: {
     backgroundColor: 'rgba(255, 255, 255, 0.95)',
@@ -361,27 +394,19 @@ const styles = StyleSheet.create({
     marginBottom: 40,
     minHeight: 400,
   },
-  friendsContainer: {
-    gap: 15,
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 20,
   },
-  requestsContainer: {
-    gap: 15,
+  friendsList: {
+    paddingBottom: 20,
   },
   friendItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 15,
-    paddingHorizontal: 15,
-    backgroundColor: '#ffffff',
-    borderRadius: 15,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 3,
+    marginBottom: 12,
   },
-  requestItem: {
+  friendContent: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -401,7 +426,6 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   avatarContainer: {
-    position: 'relative',
     marginRight: 15,
   },
   avatar: {
@@ -415,16 +439,6 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     color: '#ffffff',
-  },
-  statusIndicator: {
-    position: 'absolute',
-    bottom: 2,
-    right: 2,
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    borderWidth: 2,
-    borderColor: '#ffffff',
   },
   friendDetails: {
     flex: 1,
@@ -440,22 +454,13 @@ const styles = StyleSheet.create({
     color: '#666',
     marginBottom: 2,
   },
-  lastActivity: {
+  balanceStatus: {
     fontSize: 12,
     color: '#999',
-  },
-  requestType: {
-    fontSize: 12,
-    color: '#FF9800',
-    fontWeight: '500',
   },
   friendActions: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-  },
-  requestActions: {
-    flexDirection: 'row',
     gap: 8,
   },
   balanceChip: {
@@ -475,29 +480,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  requestButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  acceptButton: {
-    backgroundColor: '#4CAF50',
-  },
-  declineButton: {
-    backgroundColor: '#ff4757',
-  },
-  cancelButton: {
-    backgroundColor: '#f5f5f5',
-    paddingHorizontal: 12,
-    width: 'auto',
-  },
-  cancelButtonText: {
-    fontSize: 12,
-    color: '#666',
-    fontWeight: '500',
-  },
   emptyState: {
     alignItems: 'center',
     justifyContent: 'center',
@@ -514,5 +496,17 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#666',
     textAlign: 'center',
+    marginBottom: 20,
+  },
+  addFriendButton: {
+    backgroundColor: '#667eea',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 20,
+  },
+  addFriendButtonText: {
+    color: '#ffffff',
+    fontSize: 14,
+    fontWeight: '600',
   },
 });

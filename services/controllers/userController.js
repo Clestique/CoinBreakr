@@ -4,7 +4,7 @@ const Expense = require('../models/Expense');
 
 const getUserProfile = async (req, res) => {
     try {
-        const user = await User.findById(req.userId).populate('name email profileImage phoneNumber').select('-password');
+        const user = await User.findById(req.userId).select('-password');
 
         if (!user) {
             return res.status(404).json({
@@ -12,8 +12,7 @@ const getUserProfile = async (req, res) => {
                 message: 'User not found'
             });
         }
-
-        res.json({
+        res.status(200).json({
             success: true,
             data: user
         });
@@ -26,9 +25,133 @@ const getUserProfile = async (req, res) => {
     }
 };
 
+const updateUserProfile = async (req, res) => {
+    try {
+        const { name, email, profileImage, phoneNumber, role, _id } = req.body;
+
+        if (email) {
+            return res.status(400).json({
+                success: false,
+                message: 'Email cannot be updated'
+            });
+        }
+
+        if (role) {
+            return res.status(400).json({
+                success: false,
+                message: 'Role cannot be updated'
+            });
+        }
+
+        if (_id) {
+            return res.status(400).json({
+                success: false,
+                message: 'ID cannot be updated'
+            });
+        }
+
+        if (name !== undefined && (name.trim().length > 30 || name.trim().length < 2)) {
+            return res.status(400).json({
+                success: false,
+                message: 'Name cannot be more than 30 characters or less than 2 characters'
+            });
+        }
+
+        if (phoneNumber !== undefined) {
+            if (phoneNumber.length > 15 || phoneNumber.length < 10) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Phone number cannot be more than 15 characters or less than 10 characters'
+                });
+            }
+            
+            if (!phoneNumber.startsWith('+')) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Phone number must start with +'
+                });
+            }
+        }        
+
+        // Build update object with only provided fields
+        const updateFields = { updatedAt: new Date() };
+        if (name) updateFields.name = name;
+        if (profileImage) updateFields.profileImage = profileImage;
+        if (phoneNumber) updateFields.phoneNumber = phoneNumber;
+
+        const user = await User.findByIdAndUpdate(req.userId, updateFields, { new: true, runValidators: true });
+        res.status(200).json({
+            success: true,
+            data: user
+        });
+    } catch (error) {
+        console.error('Update user profile error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Server error',
+            error: error.message
+        });
+    }
+};
+
+const changePassword = async (req, res) => {
+    try {
+        const { currentPassword, newPassword } = req.body;
+
+        if (!currentPassword || !newPassword) {
+            return res.status(400).json({
+                success: false,
+                message: 'Current password and new password are required'
+            });
+        }
+
+        if (newPassword.length < 6) {
+            return res.status(400).json({
+                success: false,
+                message: 'New password must be at least 6 characters long'
+            });
+        }
+
+        // Get user with password
+        const user = await User.findById(req.userId).select('+password');
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: 'User not found'
+            });
+        }
+
+        // Verify current password
+        const isCurrentPasswordCorrect = await user.comparePassword(currentPassword);
+        if (!isCurrentPasswordCorrect) {
+            return res.status(400).json({
+                success: false,
+                message: 'Current password is incorrect'
+            });
+        }
+
+        // Update password
+        user.password = newPassword;
+        user.updatedAt = new Date();
+        await user.save();
+
+        res.json({
+            success: true,
+            message: 'Password changed successfully'
+        });
+    } catch (error) {
+        console.error('Change password error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Server error',
+            error: error.message
+        });
+    }
+};
+
 const searchUsers = async (req, res) => {
     try {
-        const { q } = req.query;
+        const { q, page = 1, limit = 10 } = req.query;
 
         if (!q || q.trim().length < 2) {
             return res.status(400).json({
@@ -36,6 +159,10 @@ const searchUsers = async (req, res) => {
                 message: 'Search term must be at least 2 characters long'
             });
         }
+
+        // Convert to numbers
+        const pageNum = parseInt(page, 10) || 1;
+        const limitNum = parseInt(limit, 10) || 10;
 
         // Escape special regex characters to prevent errors
         const escapedQuery = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -50,11 +177,16 @@ const searchUsers = async (req, res) => {
                     ]
                 }
             ]
-        }).select('name email profileImage').limit(20);
+        }).select('name email profileImage').limit(limitNum).skip((pageNum - 1) * limitNum);
 
         res.json({
             success: true,
-            data: users
+            data: users,
+            pagination: {
+                current: pageNum,
+                limit: limitNum,
+                total: users.length
+            }
         });
     } catch (error) {
         res.status(500).json({
@@ -115,7 +247,7 @@ const addFriend = async (req, res) => {
             }
             throw error;
         }
-        
+
         if (!friend) {
             return res.status(404).json({
                 success: false,
@@ -141,7 +273,7 @@ const addFriend = async (req, res) => {
             $addToSet: { friends: req.userId }
         });
 
-        res.status(201).json({
+        res.status(200).json({
             success: true,
             message: 'Friend added successfully'
         });
@@ -162,7 +294,10 @@ const removeFriend = async (req, res) => {
         try {
             new mongoose.Types.ObjectId(friendId);
         } catch (error) {
-            return res.status(204).send();
+            return res.status(400).send({
+                success: false,
+                message: 'Invalid friend ID'
+            });
         }
 
         // Remove friend from both users
@@ -174,7 +309,10 @@ const removeFriend = async (req, res) => {
             $pull: { friends: req.userId }
         });
 
-        res.status(204).send();
+        res.status(200).json({
+            success: true,
+            message: 'Friend removed successfully'
+        });
     } catch (error) {
         res.status(500).json({
             success: false,
@@ -259,5 +397,7 @@ module.exports = {
     removeFriend,
     getFriends,
     getBalanceWithFriend,
-    getAllBalances
+    getAllBalances,
+    updateUserProfile,
+    changePassword
 };

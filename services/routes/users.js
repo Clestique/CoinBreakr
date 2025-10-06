@@ -8,11 +8,19 @@ const {
   removeFriend,
   getFriends,
   getBalanceWithFriend,
-  getAllBalances
+  getAllBalances,
+  updateUserProfile,
+  changePassword
 } = require('../controllers/userController');
 
 // @route   GET /api/users/profile
 router.get('/profile', authenticateToken, getUserProfile);
+
+// @route   PATCH /api/users/profile
+router.patch('/profile', authenticateToken, updateUserProfile);
+
+// @route   PATCH /api/users/change-password
+router.patch('/change-password', authenticateToken, changePassword);
 
 // @route   GET /api/users/search
 router.get('/search', authenticateToken, searchUsers);

@@ -2,9 +2,7 @@ const Group = require('../models/Group');
 const User = require('../models/User');
 const { validationResult } = require('express-validator');
 
-// @desc    Create a new group
-// @route   POST /api/groups
-// @access  Private
+// Create a new group
 const createGroup = async (req, res) => {
   try {
     // Check for validation errors
@@ -17,8 +15,8 @@ const createGroup = async (req, res) => {
       });
     }
 
-    const { name, description } = req.body;
-    const userId = req.user.id;
+    const { name, description, members = [] } = req.body;
+    const userId = req.user._id;
 
     // Create group with creator as admin
     const group = new Group({
@@ -31,6 +29,33 @@ const createGroup = async (req, res) => {
         joinedAt: new Date()
       }]
     });
+
+    // Add additional members if provided
+    if (members && members.length > 0) {
+      // Validate that all member IDs exist and are friends of the creator
+      const user = await User.findById(userId);
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          message: 'User not found'
+        });
+      }
+
+      for (const memberId of members) {
+        // Check if the member ID is valid and is a friend of the creator
+        if (user.friends.includes(memberId)) {
+          // Check if member exists
+          const memberUser = await User.findById(memberId);
+          if (memberUser) {
+            group.members.push({
+              user: memberId,
+              role: 'member',
+              joinedAt: new Date()
+            });
+          }
+        }
+      }
+    }
 
     await group.save();
 
@@ -55,12 +80,10 @@ const createGroup = async (req, res) => {
   }
 };
 
-// @desc    Get all groups for a user
-// @route   GET /api/groups
-// @access  Private
+// Get all groups for a user
 const getGroups = async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = req.user._id;
     const groups = await Group.getGroupsForUser(userId);
 
     res.status(200).json({
@@ -78,13 +101,11 @@ const getGroups = async (req, res) => {
   }
 };
 
-// @desc    Get a specific group
-// @route   GET /api/groups/:id
-// @access  Private
+// Get a specific group
 const getGroup = async (req, res) => {
   try {
     const groupId = req.params.id;
-    const userId = req.user.id;
+    const userId = req.user._id;
 
     const group = await Group.getGroupWithMembers(groupId);
     
@@ -118,9 +139,7 @@ const getGroup = async (req, res) => {
   }
 };
 
-// @desc    Update a group
-// @route   PUT /api/groups/:id
-// @access  Private
+// Update a group
 const updateGroup = async (req, res) => {
   try {
     // Check for validation errors
@@ -134,7 +153,7 @@ const updateGroup = async (req, res) => {
     }
 
     const groupId = req.params.id;
-    const userId = req.user.id;
+    const userId = req.user._id;
     const { name, description } = req.body;
 
     const group = await Group.findById(groupId);
@@ -181,13 +200,11 @@ const updateGroup = async (req, res) => {
   }
 };
 
-// @desc    Delete a group
-// @route   DELETE /api/groups/:id
-// @access  Private
+// Delete a group
 const deleteGroup = async (req, res) => {
   try {
     const groupId = req.params.id;
-    const userId = req.user.id;
+    const userId = req.user._id;
 
     const group = await Group.findById(groupId);
     
@@ -224,9 +241,7 @@ const deleteGroup = async (req, res) => {
   }
 };
 
-// @desc    Add member to group
-// @route   POST /api/groups/:id/members
-// @access  Private
+// Add member to group
 const addMember = async (req, res) => {
   try {
     // Check for validation errors
@@ -240,7 +255,7 @@ const addMember = async (req, res) => {
     }
 
     const groupId = req.params.id;
-    const userId = req.user.id;
+    const userId = req.user._id;
     const { memberEmail, role = 'member' } = req.body;
 
     const group = await Group.findById(groupId);
@@ -302,14 +317,12 @@ const addMember = async (req, res) => {
   }
 };
 
-// @desc    Remove member from group
-// @route   DELETE /api/groups/:id/members/:memberId
-// @access  Private
+// Remove member from group
 const removeMember = async (req, res) => {
   try {
     const groupId = req.params.id;
     const memberId = req.params.memberId;
-    const userId = req.user.id;
+    const userId = req.user._id;
 
     const group = await Group.findById(groupId);
     
@@ -369,13 +382,11 @@ const removeMember = async (req, res) => {
   }
 };
 
-// @desc    Leave group (user removes themselves)
-// @route   DELETE /api/groups/:id/leave
-// @access  Private
+// Leave group (user removes themselves)
 const leaveGroup = async (req, res) => {
   try {
     const groupId = req.params.id;
-    const userId = req.user.id;
+    const userId = req.user._id;
 
     const group = await Group.findById(groupId);
     

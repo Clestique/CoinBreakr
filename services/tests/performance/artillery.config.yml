@@ -4,134 +4,253 @@ config:
     # Warm-up phase
     - duration: 60
       arrivalRate: 5
-      name: "Warm up"
-    # Ramp up phase
+      name: "Warm-up phase"
+    
+    # Ramp-up phase
     - duration: 120
-      arrivalRate: 10
+      arrivalRate: 5
       rampTo: 50
-      name: "Ramp up load"
+      name: "Ramp-up phase"
+    
     # Sustained load phase
     - duration: 300
       arrivalRate: 50
-      name: "Sustained load"
+      name: "Sustained load phase"
+    
     # Peak load phase
     - duration: 60
-      arrivalRate: 100
-      name: "Peak load"
-    # Cool down phase
+      arrivalRate: 50
+      rampTo: 100
+      name: "Peak load phase"
+    
+    # Cool-down phase
     - duration: 60
-      arrivalRate: 10
-      name: "Cool down"
+      arrivalRate: 100
+      rampTo: 5
+      name: "Cool-down phase"
+
   defaults:
     headers:
       Content-Type: 'application/json'
-  plugins:
-    metrics-by-endpoint: {}
+  
+  # Performance thresholds
   ensure:
-    p95: 2000
-    p99: 5000
-    maxErrorRate: 5
+    p95: 2000  # 95% of requests should complete within 2 seconds
+    p99: 5000  # 99% of requests should complete within 5 seconds
+    maxErrorRate: 5  # Maximum 5% error rate
 
+  # Test data
+  payload:
+    path: "./test-data.csv"
+    fields:
+      - "email"
+      - "password"
+      - "name"
+
+  # Plugins for enhanced reporting
+  plugins:
+    metrics-by-endpoint:
+      useOnlyRequestNames: true
+    
+    # Memory usage monitoring
+    publish-metrics:
+      - type: cloudwatch
+        region: us-east-1
+        
+    # Custom metrics
+    expect:
+      outputFormat: json
+      
+  # Environment variables
+  environments:
+    development:
+      target: 'http://localhost:3000'
+      phases:
+        - duration: 30
+          arrivalRate: 10
+    
+    staging:
+      target: 'http://staging-api.coinbreakr.com'
+      phases:
+        - duration: 60
+          arrivalRate: 25
+    
+    production:
+      target: 'http://api.coinbreakr.com'
+      phases:
+        - duration: 120
+          arrivalRate: 100
+
+# Test scenarios
 scenarios:
+  # Authentication flow test
   - name: "Authentication Flow"
     weight: 30
     flow:
       - post:
           url: "/v1/auth/register"
           json:
-            name: "LoadTestUser{{ $randomInt(1, 10000) }}"
-            email: "loadtest{{ $randomInt(1, 10000) }}@example.com"
+            name: "Artillery Test User {{ $randomString() }}"
+            email: "artillery{{ $randomInt(1, 10000) }}@test.com"
             password: "password123"
           capture:
             - json: "$.data.token"
               as: "authToken"
+          expect:
+            - statusCode: 201
+            - hasProperty: "data.token"
+      
       - post:
           url: "/v1/auth/login"
           json:
-            email: "loadtest{{ $randomInt(1, 10000) }}@example.com"
+            email: "artillery{{ $randomInt(1, 10000) }}@test.com"
             password: "password123"
-          capture:
-            - json: "$.data.token"
-              as: "authToken"
+          expect:
+            - statusCode: [200, 401]  # 401 is acceptable for non-existent users
 
-  - name: "User Management Flow"
+  # User management test
+  - name: "User Management"
     weight: 25
     flow:
+      # Login first
       - post:
           url: "/v1/auth/login"
           json:
-            email: "user{{ $randomInt(1, 50) }}@example.com"
-            password: "password123"
+            email: "{{ email }}"
+            password: "{{ password }}"
           capture:
             - json: "$.data.token"
               as: "authToken"
+          expect:
+            - statusCode: 200
+      
+      # Get profile
       - get:
           url: "/v1/users/profile"
           headers:
             Authorization: "Bearer {{ authToken }}"
+          expect:
+            - statusCode: 200
+            - hasProperty: "data"
+      
+      # Search users
       - get:
-          url: "/v1/users/search?q=User{{ $randomInt(1, 10) }}"
+          url: "/v1/users/search"
+          qs:
+            q: "Test"
           headers:
             Authorization: "Bearer {{ authToken }}"
-      - get:
-          url: "/v1/users/friends"
+          expect:
+            - statusCode: 200
+      
+      # Update profile
+      - patch:
+          url: "/v1/users/profile"
           headers:
             Authorization: "Bearer {{ authToken }}"
-      - get:
-          url: "/v1/users/balances"
-          headers:
-            Authorization: "Bearer {{ authToken }}"
+          json:
+            name: "Updated Artillery User {{ $randomString() }}"
+            phoneNumber: "+1{{ $randomInt(1000000000, 9999999999) }}"
+          expect:
+            - statusCode: 200
 
-  - name: "Expense Management Flow"
+  # Expense management test
+  - name: "Expense Management"
     weight: 35
     flow:
+      # Login
       - post:
           url: "/v1/auth/login"
           json:
-            email: "user{{ $randomInt(1, 50) }}@example.com"
-            password: "password123"
+            email: "{{ email }}"
+            password: "{{ password }}"
           capture:
             - json: "$.data.token"
               as: "authToken"
-      - get:
-          url: "/v1/expenses"
-          headers:
-            Authorization: "Bearer {{ authToken }}"
+            - json: "$.data.user.id"
+              as: "userId"
+          expect:
+            - statusCode: 200
+      
+      # Create expense
       - post:
           url: "/v1/expenses"
           headers:
             Authorization: "Bearer {{ authToken }}"
           json:
-            description: "Load Test Expense {{ $randomInt(1, 10000) }}"
-            amount: "{{ $randomInt(10, 1000) }}"
-            currency: "USD"
-            category: "food"
+            description: "Artillery Test Expense {{ $randomString() }}"
+            amount: "{{ $randomInt(10, 500) }}"
             splitWith:
-              - user: "{{ $randomInt(1, 50) }}"
-                amount: "{{ $randomInt(5, 500) }}"
+              - user: "{{ userId }}"
+                amount: "{{ $randomInt(5, 100) }}"
+            category: "{{ $randomElement(['food', 'transport', 'entertainment', 'shopping']) }}"
+          capture:
+            - json: "$.data._id"
+              as: "expenseId"
+          expect:
+            - statusCode: 201
+      
+      # Get expenses
       - get:
-          url: "/v1/expenses?page={{ $randomInt(1, 5) }}&limit=10"
+          url: "/v1/expenses"
           headers:
             Authorization: "Bearer {{ authToken }}"
+          expect:
+            - statusCode: 200
+            - hasProperty: "data"
+      
+      # Get expense details
+      - get:
+          url: "/v1/expenses/{{ expenseId }}"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+          expect:
+            - statusCode: [200, 404]  # 404 acceptable if expense doesn't exist
+      
+      # Get expense summary
+      - get:
+          url: "/v1/expenses/summary"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+          expect:
+            - statusCode: 200
 
-  - name: "Friend Management Flow"
+  # Health and monitoring test
+  - name: "Health Monitoring"
     weight: 10
     flow:
-      - post:
-          url: "/v1/auth/login"
-          json:
-            email: "user{{ $randomInt(1, 50) }}@example.com"
-            password: "password123"
-          capture:
-            - json: "$.data.token"
-              as: "authToken"
-      - post:
-          url: "/v1/users/friends"
-          headers:
-            Authorization: "Bearer {{ authToken }}"
-          json:
-            friendId: "{{ $randomInt(1, 50) }}"
       - get:
-          url: "/v1/users/friends/{{ $randomInt(1, 50) }}/balance"
-          headers:
-            Authorization: "Bearer {{ authToken }}"
+          url: "/v1/healthz"
+          expect:
+            - statusCode: 200
+            - hasProperty: "success"
+            - contentType: json
+      
+      # Test various endpoints for availability
+      - get:
+          url: "/v1/auth/health"
+          expect:
+            - statusCode: [200, 404]  # 404 acceptable if endpoint doesn't exist
+
+# Custom functions for data generation
+functions:
+  generateTestData: |
+    function(context, events, done) {
+      context.vars.testEmail = `artillery${Math.floor(Math.random() * 10000)}@test.com`;
+      context.vars.testPassword = 'password123';
+      context.vars.testName = `Artillery User ${Math.floor(Math.random() * 1000)}`;
+      return done();
+    }
+
+# Before and after hooks
+before:
+  flow:
+    - log: "Starting Artillery load test for CoinBreakr API"
+    - think: 1
+
+after:
+  flow:
+    - log: "Artillery load test completed"
+
+# Custom processors for advanced scenarios
+processor: "./artillery-processor.js"

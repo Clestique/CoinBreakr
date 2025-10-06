@@ -81,7 +81,7 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
             }
           };
 
-          const iconName = route.name === 'index' ? 'home' : route.name === 'friends' ? 'people' : 'person';
+          const iconName = route.name === 'index' ? 'home' : route.name === 'friends' ? 'people' : route.name === 'groups' ? 'albums' : 'person';
           const label = descriptors[route.key]?.options?.title ?? route.name;
 
           // Individual tab animations
@@ -165,7 +165,13 @@ export default function TabLayout() {
       <Tabs.Screen
         name="friends"
         options={{
-          title: 'People',
+          title: 'Friends',
+        }}
+      />
+      <Tabs.Screen
+        name="groups"
+        options={{
+          title: 'Groups',
         }}
       />
       <Tabs.Screen

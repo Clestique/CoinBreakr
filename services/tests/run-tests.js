@@ -3,148 +3,259 @@
 const { spawn } = require('child_process');
 const path = require('path');
 
-const testSuites = [
-  {
+// ANSI color codes for console output
+const colors = {
+  reset: '\x1b[0m',
+  bright: '\x1b[1m',
+  red: '\x1b[31m',
+  green: '\x1b[32m',
+  yellow: '\x1b[33m',
+  blue: '\x1b[34m',
+  magenta: '\x1b[35m',
+  cyan: '\x1b[36m'
+};
+
+// Test suite configurations
+const testSuites = {
+  smoke: {
     name: 'Smoke Tests',
     pattern: 'smoke',
-    description: 'Basic functionality verification'
+    description: 'Basic functionality and health checks',
+    color: colors.green
   },
-  {
-    name: 'Integration Tests',
-    pattern: 'integration',
-    description: 'End-to-end API testing'
-  },
-  {
-    name: 'Performance Tests',
-    pattern: 'performance',
-    description: 'Load and stress testing'
-  },
-  {
-    name: 'Edge Case Tests',
-    pattern: 'edge-cases',
-    description: 'Security and validation edge cases'
-  },
-  {
+  database: {
     name: 'Database Tests',
     pattern: 'database',
-    description: 'Data integrity and consistency'
+    description: 'Data integrity and consistency tests',
+    color: colors.blue
+  },
+  integration: {
+    name: 'Integration Tests',
+    pattern: 'integration',
+    description: 'End-to-end workflow testing',
+    color: colors.cyan
+  },
+  'edge-cases': {
+    name: 'Edge Case Tests',
+    pattern: 'edge-cases',
+    description: 'Security and validation edge cases',
+    color: colors.yellow
+  },
+  performance: {
+    name: 'Performance Tests',
+    pattern: 'performance',
+    description: 'Load and stress testing',
+    color: colors.magenta
+  },
+  load: {
+    name: 'Load Tests',
+    pattern: 'load',
+    description: 'System performance under load',
+    color: colors.cyan
+  },
+  stress: {
+    name: 'Stress Tests',
+    pattern: 'stress',
+    description: 'System breaking point analysis',
+    color: colors.red
   }
-];
+};
 
-function runTestSuite(suite) {
+// Parse command line arguments
+const args = process.argv.slice(2);
+const suiteToRun = args.find(arg => arg.startsWith('--')) ? args.find(arg => arg.startsWith('--')).substring(2) : null;
+
+// Display banner
+function displayBanner() {
+  console.log(`${colors.bright}${colors.cyan}`);
+  console.log('╔══════════════════════════════════════════════════════════════╗');
+  console.log('║                    CoinBreakr Test Suite                     ║');
+  console.log('║                  Comprehensive API Testing                   ║');
+  console.log('╚══════════════════════════════════════════════════════════════╝');
+  console.log(`${colors.reset}\n`);
+}
+
+// Display test suite information
+function displayTestSuiteInfo(suite) {
+  const config = testSuites[suite];
+  if (!config) return;
+
+  console.log(`${config.color}${colors.bright}`);
+  console.log(`🧪 Running ${config.name}`);
+  console.log(`📋 ${config.description}`);
+  console.log(`${colors.reset}\n`);
+}
+
+// Display available test suites
+function displayAvailableSuites() {
+  console.log(`${colors.bright}Available Test Suites:${colors.reset}\n`);
+  
+  Object.entries(testSuites).forEach(([key, config]) => {
+    console.log(`${config.color}${colors.bright}${key.padEnd(15)}${colors.reset} - ${config.description}`);
+  });
+  
+  console.log(`\n${colors.bright}Usage:${colors.reset}`);
+  console.log(`  node tests/run-tests.js                    # Run all tests`);
+  console.log(`  node tests/run-tests.js --smoke           # Run smoke tests only`);
+  console.log(`  node tests/run-tests.js --database        # Run database tests only`);
+  console.log(`  node tests/run-tests.js --integration     # Run integration tests only`);
+  console.log(`  node tests/run-tests.js --edge-cases      # Run edge case tests only`);
+  console.log(`  node tests/run-tests.js --performance     # Run performance tests only`);
+  console.log('');
+}
+
+// Run Jest with specific pattern
+function runJest(pattern = null, suiteName = 'All Tests') {
   return new Promise((resolve, reject) => {
-    console.log(`\n🧪 Running ${suite.name}...`);
-    console.log(`📝 ${suite.description}\n`);
+    const jestArgs = [
+      '--verbose',
+      '--colors',
+      '--forceExit',
+      '--detectOpenHandles',
+      '--maxWorkers=1'
+    ];
 
-    const jest = spawn('npx', ['jest', `--testPathPattern=${suite.pattern}`, '--verbose'], {
+    if (pattern) {
+      jestArgs.push('--testPathPattern', pattern);
+    }
+
+    console.log(`${colors.bright}Starting ${suiteName}...${colors.reset}\n`);
+    
+    const jest = spawn('npx', ['jest', ...jestArgs], {
       stdio: 'inherit',
-      shell: true
+      cwd: process.cwd()
     });
 
     jest.on('close', (code) => {
       if (code === 0) {
-        console.log(`✅ ${suite.name} completed successfully\n`);
-        resolve();
+        console.log(`\n${colors.green}${colors.bright}✅ ${suiteName} completed successfully!${colors.reset}\n`);
+        resolve(code);
       } else {
-        console.log(`❌ ${suite.name} failed with code ${code}\n`);
-        reject(new Error(`${suite.name} failed`));
+        console.log(`\n${colors.red}${colors.bright}❌ ${suiteName} failed with exit code ${code}${colors.reset}\n`);
+        reject(new Error(`Tests failed with exit code ${code}`));
       }
     });
 
     jest.on('error', (error) => {
-      console.log(`❌ ${suite.name} failed to start: ${error.message}\n`);
+      console.error(`\n${colors.red}${colors.bright}❌ Error running ${suiteName}:${colors.reset}`, error);
       reject(error);
     });
   });
 }
 
-async function runAllTests() {
-  console.log('🚀 Starting CoinBreakr Test Suite');
-  console.log('=====================================\n');
-
-  const startTime = Date.now();
-  const results = [];
-
-  for (const suite of testSuites) {
-    try {
-      await runTestSuite(suite);
-      results.push({ name: suite.name, status: 'PASSED' });
-    } catch (error) {
-      results.push({ name: suite.name, status: 'FAILED', error: error.message });
-    }
+// Run specific test suite
+async function runTestSuite(suite) {
+  const config = testSuites[suite];
+  if (!config) {
+    console.error(`${colors.red}❌ Unknown test suite: ${suite}${colors.reset}`);
+    displayAvailableSuites();
+    process.exit(1);
   }
 
-  const endTime = Date.now();
-  const duration = ((endTime - startTime) / 1000).toFixed(2);
-
-  console.log('📊 Test Results Summary');
-  console.log('========================');
+  displayTestSuiteInfo(suite);
   
-  results.forEach(result => {
-    const status = result.status === 'PASSED' ? '✅' : '❌';
-    console.log(`${status} ${result.name}: ${result.status}`);
-    if (result.error) {
-      console.log(`   Error: ${result.error}`);
-    }
-  });
-
-  console.log(`\n⏱️  Total execution time: ${duration} seconds`);
-
-  const passedTests = results.filter(r => r.status === 'PASSED').length;
-  const totalTests = results.length;
-
-  console.log(`\n📈 Overall Result: ${passedTests}/${totalTests} test suites passed`);
-
-  if (passedTests === totalTests) {
-    console.log('🎉 All tests passed! The CoinBreakr API is ready for production.');
-    process.exit(0);
-  } else {
-    console.log('⚠️  Some tests failed. Please review the errors above.');
+  try {
+    await runJest(config.pattern, config.name);
+    console.log(`${colors.green}${colors.bright}🎉 ${config.name} completed successfully!${colors.reset}`);
+  } catch (error) {
+    console.error(`${colors.red}${colors.bright}💥 ${config.name} failed!${colors.reset}`);
     process.exit(1);
   }
 }
 
-// Handle command line arguments
-const args = process.argv.slice(2);
-
-if (args.includes('--help') || args.includes('-h')) {
-  console.log(`
-CoinBreakr Test Runner
-
-Usage:
-  node tests/run-tests.js [options]
-
-Options:
-  --help, -h          Show this help message
-  --smoke             Run only smoke tests
-  --integration       Run only integration tests
-  --performance       Run only performance tests
-  --edge-cases        Run only edge case tests
-  --database          Run only database tests
-  --all               Run all tests (default)
-
-Examples:
-  node tests/run-tests.js --smoke
-  node tests/run-tests.js --integration --performance
-  node tests/run-tests.js --all
-`);
-  process.exit(0);
+// Run all test suites
+async function runAllTests() {
+  console.log(`${colors.bright}Running Complete Test Suite${colors.reset}\n`);
+  
+  const suitesToRun = ['smoke', 'database', 'integration', 'edge-cases', 'performance', 'load', 'stress'];
+  let failedSuites = [];
+  
+  for (const suite of suitesToRun) {
+    try {
+      displayTestSuiteInfo(suite);
+      await runJest(testSuites[suite].pattern, testSuites[suite].name);
+    } catch (error) {
+      failedSuites.push(suite);
+      console.error(`${colors.red}${colors.bright}💥 ${testSuites[suite].name} failed!${colors.reset}\n`);
+    }
+  }
+  
+  // Display final results
+  console.log(`${colors.bright}${colors.cyan}`);
+  console.log('╔══════════════════════════════════════════════════════════════╗');
+  console.log('║                      Test Results Summary                    ║');
+  console.log('╚══════════════════════════════════════════════════════════════╝');
+  console.log(`${colors.reset}`);
+  
+  if (failedSuites.length === 0) {
+    console.log(`${colors.green}${colors.bright}🎉 All test suites passed successfully!${colors.reset}`);
+  } else {
+    console.log(`${colors.red}${colors.bright}❌ ${failedSuites.length} test suite(s) failed:${colors.reset}`);
+    failedSuites.forEach(suite => {
+      console.log(`${colors.red}   • ${testSuites[suite].name}${colors.reset}`);
+    });
+    process.exit(1);
+  }
 }
 
-if (args.includes('--smoke')) {
-  runTestSuite(testSuites[0]).then(() => process.exit(0)).catch(() => process.exit(1));
-} else if (args.includes('--integration')) {
-  runTestSuite(testSuites[1]).then(() => process.exit(0)).catch(() => process.exit(1));
-} else if (args.includes('--performance')) {
-  runTestSuite(testSuites[2]).then(() => process.exit(0)).catch(() => process.exit(1));
-} else if (args.includes('--edge-cases')) {
-  runTestSuite(testSuites[3]).then(() => process.exit(0)).catch(() => process.exit(1));
-} else if (args.includes('--database')) {
-  runTestSuite(testSuites[4]).then(() => process.exit(0)).catch(() => process.exit(1));
-} else {
-  // Run all tests by default
-  runAllTests().catch((error) => {
-    console.error('Test runner failed:', error);
+// Display system information
+function displaySystemInfo() {
+  console.log(`${colors.bright}System Information:${colors.reset}`);
+  console.log(`  Node.js: ${process.version}`);
+  console.log(`  Platform: ${process.platform}`);
+  console.log(`  Architecture: ${process.arch}`);
+  console.log(`  Memory: ${Math.round(process.memoryUsage().heapUsed / 1024 / 1024)}MB used`);
+  console.log('');
+}
+
+// Main execution
+async function main() {
+  displayBanner();
+  displaySystemInfo();
+  
+  if (args.includes('--help') || args.includes('-h')) {
+    displayAvailableSuites();
+    return;
+  }
+  
+  try {
+    if (suiteToRun && testSuites[suiteToRun]) {
+      await runTestSuite(suiteToRun);
+    } else if (suiteToRun) {
+      console.error(`${colors.red}❌ Unknown test suite: ${suiteToRun}${colors.reset}\n`);
+      displayAvailableSuites();
+      process.exit(1);
+    } else {
+      await runAllTests();
+    }
+  } catch (error) {
+    console.error(`${colors.red}${colors.bright}💥 Test execution failed:${colors.reset}`, error.message);
+    process.exit(1);
+  }
+}
+
+// Handle process signals
+process.on('SIGINT', () => {
+  console.log(`\n${colors.yellow}${colors.bright}⚠️  Test execution interrupted by user${colors.reset}`);
+  process.exit(130);
+});
+
+process.on('SIGTERM', () => {
+  console.log(`\n${colors.yellow}${colors.bright}⚠️  Test execution terminated${colors.reset}`);
+  process.exit(143);
+});
+
+// Run the main function
+if (require.main === module) {
+  main().catch(error => {
+    console.error(`${colors.red}${colors.bright}💥 Fatal error:${colors.reset}`, error);
     process.exit(1);
   });
 }
+
+module.exports = {
+  runJest,
+  runTestSuite,
+  runAllTests,
+  testSuites
+};

@@ -31,7 +31,7 @@ interface User {
   id: string;
   name: string;
   email: string;
-  phone?: string;
+  phoneNumber?: string;
 }
 
 export default function ProfilePage() {
@@ -122,7 +122,7 @@ export default function ProfilePage() {
 
   const handleCancelEdit = () => {
     setEditedName(user?.name || '');
-    setEditedPhone(user?.phone || '');
+    setEditedPhone(user?.phoneNumber || '');
     setIsEditing(false);
   };
 
@@ -344,7 +344,7 @@ export default function ProfilePage() {
                     />
                   ) : (
                     <Text style={styles.infoValue}>
-                      {user.phone || 'Not provided'}
+                      {user.phoneNumber || 'Not provided'}
                     </Text>
                   )}
                 </View>

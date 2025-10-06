@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const API_BASE_URL = 'http://10.0.0.241:3000/api';
+const API_BASE_URL = 'http://10.0.0.241:3000/v1';
 const TOKEN_KEY = 'auth_token';
 
 interface SignUpData {
@@ -28,6 +28,12 @@ interface User {
   name: string;
   email: string;
   phone?: string;
+  profileImage?: string;
+}
+
+interface ChangePasswordData {
+  currentPassword: string;
+  newPassword: string;
 }
 
 export class AuthService {
@@ -72,7 +78,7 @@ export class AuthService {
     
     const headers = {
       'Content-Type': 'application/json',
-      ...(token && { Authorization: token }),
+      ...(token && { Authorization: `Bearer ${token}` }),
       ...options.headers,
     };
 
@@ -91,13 +97,22 @@ export class AuthService {
       throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
     }
 
-    return await response.json();
+    // Handle empty responses (like 204 No Content)
+    if (response.status === 204) {
+      return {};
+    }
+
+    // Check if response has content to parse
+    const contentType = response.headers.get('content-type');
+    if (contentType && contentType.includes('application/json')) {
+      return await response.json();
+    }
   }
 
   // Sign up new user
   static async signUp(data: SignUpData): Promise<AuthResponse> {
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/signup`, {
+      const response = await fetch(`${API_BASE_URL}/auth/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -162,20 +177,20 @@ export class AuthService {
   static async signOut(): Promise<void> {
     try {
       const token = await this.getToken();
-      if (token) {
-        // Optional: Call server to invalidate token
-        try {
-          await fetch(`${API_BASE_URL}/auth/signout`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              Authorization: token,
-            },
-          });
-        } catch (error) {
-          console.warn('Failed to notify server of sign out:', error);
-        }
-      }
+      // if (token) {
+      //   // Optional: Call server to invalidate token
+      //   try {
+      //     await fetch(`${API_BASE_URL}/auth/signout`, {
+      //       method: 'POST',
+      //       headers: {
+      //         'Content-Type': 'application/json',
+      //         Authorization: `Bearer ${token}`,
+      //       },
+      //     });
+      //   } catch (error) {
+      //     console.warn('Failed to notify server of sign out:', error);
+      //   }
+      // }
       
       await this.removeToken();
     } catch (error) {
@@ -187,10 +202,10 @@ export class AuthService {
   // Get current user profile
   static async getCurrentUser(): Promise<User> {
     try {
-      const response = await this.makeAuthenticatedRequest('/auth/profile', {
+      const response = await this.makeAuthenticatedRequest('/users/profile', {
         method: 'GET',
       });
-      return response.data.user; // Handle different response structures
+      return response.data; // Handle different response structures
     } catch (error) {
       console.error('Get current user error:', error);
       throw error;
@@ -200,11 +215,11 @@ export class AuthService {
   // Update user profile
   static async updateProfile(data: Partial<User>): Promise<User> {
     try {
-      const response = await this.makeAuthenticatedRequest('/auth/profile', {
-        method: 'PUT',
+      const response = await this.makeAuthenticatedRequest('/users/profile', {
+        method: 'PATCH',
         body: JSON.stringify(data),
       });
-      return response.data.user; // Handle different response structures
+      return response.data; // Handle different response structures
     } catch (error) {
       console.error('Update profile error:', error);
       throw error;
@@ -212,10 +227,10 @@ export class AuthService {
   }
 
   // Change password
-  static async changePassword(data: { currentPassword: string; newPassword: string }): Promise<void> {
+  static async changePassword(data: ChangePasswordData): Promise<void> {
     try {
-      await this.makeAuthenticatedRequest('/auth/change-password', {
-        method: 'PUT',
+      await this.makeAuthenticatedRequest('/users/change-password', {
+        method: 'PATCH',
         body: JSON.stringify(data),
       });
     } catch (error) {

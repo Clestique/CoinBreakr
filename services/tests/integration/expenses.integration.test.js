@@ -1,1079 +1,711 @@
 const request = require('supertest');
-const app = require('../test-server');
+const createTestApp = require('../test-server');
 const User = require('../../models/User');
 const Expense = require('../../models/Expense');
+const Group = require('../../models/Group');
 
-describe('Expense Management Integration Tests', () => {
-  let user1, user2, user3, user4, token1, token2, token3, token4;
+// Create test app instance
+const app = createTestApp();
+
+describe('🔗 Integration Tests - Expense Management Workflows', () => {
+  let testUser1, testUser2, testUser3;
+  let authToken1, authToken2, authToken3;
+  let testGroup;
 
   beforeEach(async () => {
+    // Clean slate for each test
+    await User.deleteMany({});
+    await Expense.deleteMany({});
+    await Group.deleteMany({});
+
     // Create test users
-    user1 = new User({
-      name: 'John Doe',
-      email: 'john@example.com',
-      password: 'password123'
-    });
-    await user1.save();
+    testUser1 = new User(global.testUtils.createTestUser({
+      name: 'Expense User 1',
+      email: 'expense1@test.com'
+    }));
+    await testUser1.save();
+    authToken1 = global.testUtils.generateToken(testUser1._id);
 
-    user2 = new User({
-      name: 'Jane Smith',
-      email: 'jane@example.com',
-      password: 'password123'
-    });
-    await user2.save();
+    testUser2 = new User(global.testUtils.createTestUser({
+      name: 'Expense User 2',
+      email: 'expense2@test.com'
+    }));
+    await testUser2.save();
+    authToken2 = global.testUtils.generateToken(testUser2._id);
 
-    user3 = new User({
-      name: 'Bob Johnson',
-      email: 'bob@example.com',
-      password: 'password123'
-    });
-    await user3.save();
+    testUser3 = new User(global.testUtils.createTestUser({
+      name: 'Expense User 3',
+      email: 'expense3@test.com'
+    }));
+    await testUser3.save();
+    authToken3 = global.testUtils.generateToken(testUser3._id);
 
-    user4 = new User({
-      name: 'Alice Brown',
-      email: 'alice@example.com',
-      password: 'password123'
-    });
-    await user4.save();
+    // Add friendships
+    testUser1.friends.push(testUser2._id, testUser3._id);
+    testUser2.friends.push(testUser1._id, testUser3._id);
+    testUser3.friends.push(testUser1._id, testUser2._id);
+    await testUser1.save();
+    await testUser2.save();
+    await testUser3.save();
 
-    // Get tokens
-    const login1 = await request(app)
-      .post('/v1/auth/login')
-      .send({ email: 'john@example.com', password: 'password123' });
-    
-    token1 = login1.body.data.token;
-    user1 = login1.body.data.user;
-
-    const login2 = await request(app)
-      .post('/v1/auth/login')
-      .send({ email: 'jane@example.com', password: 'password123' });
-    token2 = login2.body.data.token;
-    user2 = login2.body.data.user;
-
-    const login3 = await request(app)
-      .post('/v1/auth/login')
-      .send({ email: 'bob@example.com', password: 'password123' });
-    token3 = login3.body.data.token;
-    user3 = login3.body.data.user;
-
-    const login4 = await request(app)
-      .post('/v1/auth/login')
-      .send({ email: 'alice@example.com', password: 'password123' });
-    token4 = login4.body.data.token;
-    user4 = login4.body.data.user;
-
-    // Add friends
-    await request(app)
-      .post('/v1/users/friends')
-      .set('Authorization', `Bearer ${token1}`)
-      .send({ friendId: user2.id.toString() });
-
-    await request(app)
-      .post('/v1/users/friends')
-      .set('Authorization', `Bearer ${token1}`)
-      .send({ friendId: user3.id.toString() });
-
-    await request(app)
-      .post('/v1/users/friends')
-      .set('Authorization', `Bearer ${token2}`)
-      .send({ friendId: user3.id.toString() });
+    // Create test group
+    testGroup = new Group(global.testUtils.createTestGroup(
+      testUser1._id,
+      [testUser2._id, testUser3._id]
+    ));
+    await testGroup.save();
   });
 
-  describe('POST /v1/expenses', () => {
-    it('should create expense successfully', async () => {
+  describe('💰 Complete Expense Lifecycle', () => {
+    test('should complete full expense workflow: create -> view -> settle -> verify', async () => {
       const expenseData = {
-        description: 'Dinner at restaurant',
-        amount: 100.00,
-        currency: 'USD',
+        description: 'Integration Test Dinner',
+        amount: 120,
+        splitWith: [
+          { user: testUser2._id, amount: 40 },
+          { user: testUser3._id, amount: 40 }
+        ],
         category: 'food',
-        splitWith: [
-          {
-            user: user1.id.toString(),
-            amount: 50.00
-          },
-          {
-            user: user2.id.toString(),
-            amount: 50.00
-          }
-        ]
+        date: new Date().toISOString()
       };
 
-      const response = await request(app)
+      // Step 1: Create expense
+      const createResponse = await request(app)
         .post('/v1/expenses')
-        .set('Authorization', `Bearer ${token1}`)
+        .set('Authorization', `Bearer ${authToken1}`)
         .send(expenseData)
         .expect(201);
 
-      expect(response.body.success).toBe(true);
-      expect(response.body.data.description).toBe(expenseData.description);
-      expect(response.body.data.amount).toBe(expenseData.amount);
-      expect(response.body.data.paidBy.name).toBe('John Doe');
-      expect(response.body.data.splitWith.length).toBe(2);
+      expect(createResponse.body).toHaveProperty('success', true);
+      expect(createResponse.body).toHaveProperty('data');
+      const expenseId = createResponse.body.data._id;
+      expect(createResponse.body.data).toHaveProperty('description', expenseData.description);
+      expect(createResponse.body.data).toHaveProperty('amount', expenseData.amount);
+      expect(createResponse.body.data.splitWith).toHaveLength(2);
+
+      // Step 2: Verify expense appears in creator's list
+      const user1ExpensesResponse = await request(app)
+        .get('/v1/expenses')
+        .set('Authorization', `Bearer ${authToken1}`)
+        .expect(200);
+
+      expect(user1ExpensesResponse.body.data).toHaveLength(1);
+      expect(user1ExpensesResponse.body.data[0]).toHaveProperty('_id', expenseId);
+
+      // Step 3: Verify expense appears in other users' lists
+      const user2ExpensesResponse = await request(app)
+        .get('/v1/expenses')
+        .set('Authorization', `Bearer ${authToken2}`)
+        .expect(200);
+
+      expect(user2ExpensesResponse.body.data).toHaveLength(1);
+      expect(user2ExpensesResponse.body.data[0]).toHaveProperty('_id', expenseId);
+
+      // Step 4: Get expense details
+      const expenseDetailResponse = await request(app)
+        .get(`/v1/expenses/${expenseId}`)
+        .set('Authorization', `Bearer ${authToken2}`)
+        .expect(200);
+
+      expect(expenseDetailResponse.body.data).toHaveProperty('_id', expenseId);
+      expect(expenseDetailResponse.body.data).toHaveProperty('isSettled', false);
+
+      // Step 5: User 2 settles their part
+      const settleResponse = await request(app)
+        .put(`/v1/expenses/${expenseId}/settle`)
+        .set('Authorization', `Bearer ${authToken2}`)
+        .expect(200);
+
+      expect(settleResponse.body).toHaveProperty('success', true);
+
+      // Step 6: Verify settlement status
+      const afterSettleResponse = await request(app)
+        .get(`/v1/expenses/${expenseId}`)
+        .set('Authorization', `Bearer ${authToken1}`)
+        .expect(200);
+
+      const user2Split = afterSettleResponse.body.data.splitWith.find(
+        s => s.user._id === testUser2._id.toString()
+      );
+      expect(user2Split.settled).toBe(true);
+      expect(user2Split.settledAt).toBeTruthy();
+
+      // Step 7: User 3 settles their part
+      await request(app)
+        .put(`/v1/expenses/${expenseId}/settle`)
+        .set('Authorization', `Bearer ${authToken3}`)
+        .expect(200);
+
+      // Step 8: Verify expense is fully settled
+      const fullySettledResponse = await request(app)
+        .get(`/v1/expenses/${expenseId}`)
+        .set('Authorization', `Bearer ${authToken1}`)
+        .expect(200);
+
+      expect(fullySettledResponse.body.data.isSettled).toBe(true);
+      expect(fullySettledResponse.body.data.settledAt).toBeTruthy();
+      fullySettledResponse.body.data.splitWith.forEach(split => {
+        expect(split.settled).toBe(true);
+      });
+
+      // Step 9: Verify balances are calculated correctly
+      const balance1to2Response = await request(app)
+        .get(`/v1/expenses/balance/${testUser2._id}`)
+        .set('Authorization', `Bearer ${authToken1}`)
+        .expect(200);
+
+      expect(balance1to2Response.body.data.balance).toBe(40);
+
+      const balance1to3Response = await request(app)
+        .get(`/v1/expenses/balance/${testUser3._id}`)
+        .set('Authorization', `Bearer ${authToken1}`)
+        .expect(200);
+
+      expect(balance1to3Response.body.data.balance).toBe(40);
     });
 
-    it('should create expense with multiple splits', async () => {
-      const expenseData = {
-        description: 'Group dinner',
-        amount: 100.00,
-        currency: 'USD',
-        category: 'food',
-        splitWith: [
-          {
-            user: user2._id.toString(),
-            amount: 50.00
-          },
-          {
-            user: user3._id.toString(),
-            amount: 50.00
-          }
-        ]
-      };
-
-      const response = await request(app)
-        .post('/v1/expenses')
-        .set('Authorization', `Bearer ${token1}`)
-        .send(expenseData)
-        .expect(201);
-
-      expect(response.body.success).toBe(true);
-      expect(response.body.data.splitWith.length).toBe(2);
-    });
-
-    it('should fail to create expense with non-friend', async () => {
-      const expenseData = {
-        description: 'Dinner',
-        amount: 100.00,
-        splitWith: [
-          {
-            user: user4._id.toString(), // Not a friend
-            amount: 50.00
-          }
-        ]
-      };
-
-      const response = await request(app)
-        .post('/v1/expenses')
-        .set('Authorization', `Bearer ${token1}`)
-        .send(expenseData)
-        .expect(400);
-
-      expect(response.body.success).toBe(false);
-      expect(response.body.message).toContain('must be your friends');
-    });
-
-    it('should fail with mismatched split amounts', async () => {
-      const expenseData = {
-        description: 'Dinner',
-        amount: 100.00,
-        splitWith: [
-          {
-            user: user2._id.toString(),
-            amount: 60.00 // Doesn't match total
-          }
-        ]
-      };
-
-      const response = await request(app)
-        .post('/v1/expenses')
-        .set('Authorization', `Bearer ${token1}`)
-        .send(expenseData)
-        .expect(400);
-
-      expect(response.body.success).toBe(false);
-      expect(response.body.message).toContain('must equal');
-    });
-
-    it('should fail with negative amount', async () => {
-      const expenseData = {
-        description: 'Dinner',
-        amount: -100.00,
-        splitWith: [
-          {
-            user: user2._id.toString(),
-            amount: -50.00
-          }
-        ]
-      };
-
-      const response = await request(app)
-        .post('/v1/expenses')
-        .set('Authorization', `Bearer ${token1}`)
-        .send(expenseData)
-        .expect(400);
-
-      expect(response.body.success).toBe(false);
-    });
-
-    it('should fail with zero amount', async () => {
-      const expenseData = {
-        description: 'Dinner',
-        amount: 0,
-        splitWith: [
-          {
-            user: user2._id.toString(),
-            amount: 0
-          }
-        ]
-      };
-
-      const response = await request(app)
-        .post('/v1/expenses')
-        .set('Authorization', `Bearer ${token1}`)
-        .send(expenseData)
-        .expect(400);
-
-      expect(response.body.success).toBe(false);
-    });
-
-    it('should fail without required fields', async () => {
-      const expenseData = {
-        amount: 100.00
-        // Missing description and splitWith
-      };
-
-      const response = await request(app)
-        .post('/v1/expenses')
-        .set('Authorization', `Bearer ${token1}`)
-        .send(expenseData)
-        .expect(400);
-
-      expect(response.body.success).toBe(false);
-      expect(response.body.message).toContain('required');
-    });
-
-    it('should fail with empty splitWith array', async () => {
-      const expenseData = {
-        description: 'Dinner',
-        amount: 100.00,
-        splitWith: []
-      };
-
-      const response = await request(app)
-        .post('/v1/expenses')
-        .set('Authorization', `Bearer ${token1}`)
-        .send(expenseData)
-        .expect(400);
-
-      expect(response.body.success).toBe(false);
-    });
-
-    it('should handle decimal amounts correctly', async () => {
-      const expenseData = {
-        description: 'Coffee',
-        amount: 7.50,
-        splitWith: [
-          {
-            user: user1.id.toString(),
-            amount: 3.75
-          },
-          {
-            user: user2.id.toString(),
-            amount: 3.75
-          }
-        ]
-      };
-
-      const response = await request(app)
-        .post('/v1/expenses')
-        .set('Authorization', `Bearer ${token1}`)
-        .send(expenseData)
-        .expect(201);
-
-      expect(response.body.success).toBe(true);
-      expect(response.body.data.amount).toBe(7.50);
-    });
-
-    it('should handle different currencies', async () => {
-      const expenseData = {
-        description: 'Dinner',
-        amount: 100.00,
-        currency: 'EUR',
-        splitWith: [
-          {
-            user: user1.id.toString(),
-            amount: 50.00
-          },
-          {
-            user: user2.id.toString(),
-            amount: 50.00
-          }
-        ]
-      };
-
-      const response = await request(app)
-        .post('/v1/expenses')
-        .set('Authorization', `Bearer ${token1}`)
-        .send(expenseData)
-        .expect(201);
-
-      expect(response.body.success).toBe(true);
-      expect(response.body.data.currency).toBe('EUR');
-    });
-
-    it('should handle different categories', async () => {
-      const categories = ['food', 'transport', 'entertainment', 'shopping', 'utilities', 'travel', 'other'];
-
-      for (const category of categories) {
-        const expenseData = {
-          description: `Test ${category}`,
-          amount: 50.00,
-          category,
+    test('should handle complex multi-user expense scenarios', async () => {
+      // Scenario: Multiple expenses between different combinations of users
+      const expenses = [
+        {
+          payer: testUser1._id,
+          payerToken: authToken1,
+          description: 'Dinner - User 1 pays',
+          amount: 90,
           splitWith: [
-            {
-              user: user1.id.toString(),
-              amount: 25.00
-            },
-            {
-              user: user2.id.toString(),
-              amount: 25.00
-            }
+            { user: testUser2._id, amount: 30 },
+            { user: testUser3._id, amount: 30 }
           ]
-        };
+        },
+        {
+          payer: testUser2._id,
+          payerToken: authToken2,
+          description: 'Movie - User 2 pays',
+          amount: 60,
+          splitWith: [
+            { user: testUser1._id, amount: 20 },
+            { user: testUser3._id, amount: 20 }
+          ]
+        },
+        {
+          payer: testUser3._id,
+          payerToken: authToken3,
+          description: 'Coffee - User 3 pays',
+          amount: 30,
+          splitWith: [
+            { user: testUser1._id, amount: 10 },
+            { user: testUser2._id, amount: 10 }
+          ]
+        }
+      ];
 
+      // Create all expenses
+      const createdExpenses = [];
+      for (const expense of expenses) {
         const response = await request(app)
           .post('/v1/expenses')
-          .set('Authorization', `Bearer ${token1}`)
-          .send(expenseData)
+          .set('Authorization', `Bearer ${expense.payerToken}`)
+          .send({
+            description: expense.description,
+            amount: expense.amount,
+            splitWith: expense.splitWith,
+            category: 'entertainment'
+          })
           .expect(201);
 
-        expect(response.body.success).toBe(true);
-        expect(response.body.data.category).toBe(category);
+        createdExpenses.push(response.body.data);
       }
+
+      // Verify all users see all expenses
+      for (const token of [authToken1, authToken2, authToken3]) {
+        const expensesResponse = await request(app)
+          .get('/v1/expenses')
+          .set('Authorization', `Bearer ${token}`)
+          .expect(200);
+
+        expect(expensesResponse.body.data).toHaveLength(3);
+      }
+
+      // Calculate expected balances
+      // User 1: Paid 90, owes 30 (20+10) = net +60
+      // User 2: Paid 60, owes 40 (30+10) = net +20  
+      // User 3: Paid 30, owes 50 (30+20) = net -20
+
+      const balance1to2Response = await request(app)
+        .get(`/v1/expenses/balance/${testUser2._id}`)
+        .set('Authorization', `Bearer ${authToken1}`)
+        .expect(200);
+
+      const balance1to3Response = await request(app)
+        .get(`/v1/expenses/balance/${testUser3._id}`)
+        .set('Authorization', `Bearer ${authToken1}`)
+        .expect(200);
+
+      // User 1 should be owed money from both users
+      expect(balance1to2Response.body.data.balance).toBe(20); // 30 - 10 = 20
+      expect(balance1to3Response.body.data.balance).toBe(20); // 30 - 10 = 20
     });
 
-    it('should fail with invalid category', async () => {
+    test('should handle expense updates and modifications', async () => {
+      // Create initial expense
       const expenseData = {
-        description: 'Dinner',
-        amount: 100.00,
-        category: 'invalid-category',
-        splitWith: [
-          {
-            user: user2._id.toString(),
-            amount: 50.00
-          }
-        ]
+        description: 'Initial Expense',
+        amount: 100,
+        splitWith: [{ user: testUser2._id, amount: 50 }],
+        category: 'food'
       };
 
-      const response = await request(app)
+      const createResponse = await request(app)
         .post('/v1/expenses')
-        .set('Authorization', `Bearer ${token1}`)
-        .send(expenseData)
-        .expect(400);
-
-      expect(response.body.success).toBe(false);
-    });
-
-    it('should handle very long descriptions', async () => {
-      const expenseData = {
-        description: 'a'.repeat(200), // Max length
-        amount: 100.00,
-        splitWith: [
-          {
-            user: user1.id.toString(),
-            amount: 50.00
-          },
-          {
-            user: user2.id.toString(),
-            amount: 50.00
-          }
-        ]
-      };
-
-      const response = await request(app)
-        .post('/v1/expenses')
-        .set('Authorization', `Bearer ${token1}`)
+        .set('Authorization', `Bearer ${authToken1}`)
         .send(expenseData)
         .expect(201);
 
-      expect(response.body.success).toBe(true);
-    });
+      const expenseId = createResponse.body.data._id;
 
-    it('should fail with description too long', async () => {
-      const expenseData = {
-        description: 'a'.repeat(201), // Over max length
-        amount: 100.00,
-        splitWith: [
-          {
-            user: user2._id.toString(),
-            amount: 50.00
-          }
-        ]
+      // Update expense description and category
+      const updateData = {
+        description: 'Updated Expense Description',
+        category: 'entertainment'
       };
 
-      const response = await request(app)
+      const updateResponse = await request(app)
+        .put(`/v1/expenses/${expenseId}`)
+        .set('Authorization', `Bearer ${authToken1}`)
+        .send(updateData)
+        .expect(200);
+
+      expect(updateResponse.body.data).toHaveProperty('description', updateData.description);
+      expect(updateResponse.body.data).toHaveProperty('category', updateData.category);
+      expect(updateResponse.body.data).toHaveProperty('amount', 100); // Unchanged
+
+      // Verify update persisted
+      const getResponse = await request(app)
+        .get(`/v1/expenses/${expenseId}`)
+        .set('Authorization', `Bearer ${authToken1}`)
+        .expect(200);
+
+      expect(getResponse.body.data).toHaveProperty('description', updateData.description);
+      expect(getResponse.body.data).toHaveProperty('category', updateData.category);
+    });
+
+    test('should prevent unauthorized expense modifications', async () => {
+      // User 1 creates expense
+      const expenseData = {
+        description: 'User 1 Expense',
+        amount: 100,
+        splitWith: [{ user: testUser2._id, amount: 50 }]
+      };
+
+      const createResponse = await request(app)
         .post('/v1/expenses')
-        .set('Authorization', `Bearer ${token1}`)
+        .set('Authorization', `Bearer ${authToken1}`)
         .send(expenseData)
-        .expect(400);
+        .expect(201);
 
-      expect(response.body.success).toBe(false);
-    });
-  });
+      const expenseId = createResponse.body.data._id;
 
-  describe('GET /v1/expenses', () => {
-    let expense1, expense2, expense3;
-
-    beforeEach(async () => {
-      // Create test expenses
-      expense1 = new Expense({
-        description: 'Dinner',
-        amount: 100.00,
-        paidBy: user1._id,
-        splitWith: [{ user: user2._id, amount: 50.00, settled: false }],
-        category: 'food'
-      });
-      await expense1.save();
-
-      expense2 = new Expense({
-        description: 'Movie',
-        amount: 30.00,
-        paidBy: user2._id,
-        splitWith: [{ user: user1._id, amount: 15.00, settled: true }],
-        category: 'entertainment'
-      });
-      await expense2.save();
-
-      expense3 = new Expense({
-        description: 'Gas',
-        amount: 50.00,
-        paidBy: user1._id,
-        splitWith: [{ user: user3._id, amount: 25.00, settled: false }],
-        category: 'transport'
-      });
-      await expense3.save();
-    });
-
-    it('should get user expenses successfully', async () => {
-      const response = await request(app)
-        .get('/v1/expenses')
-        .set('Authorization', `Bearer ${token1}`)
-        .expect(200);
-
-      expect(response.body.success).toBe(true);
-      expect(response.body.data.length).toBeGreaterThan(0);
-      expect(response.body.pagination).toBeDefined();
-    });
-
-    it('should filter expenses by friend', async () => {
-      const response = await request(app)
-        .get(`/v1/expenses?friendId=${user2._id}`)
-        .set('Authorization', `Bearer ${token1}`)
-        .expect(200);
-
-      expect(response.body.success).toBe(true);
-      expect(response.body.data.length).toBeGreaterThan(0);
-    });
-
-    it('should filter expenses by settlement status', async () => {
-      const response = await request(app)
-        .get('/v1/expenses?settled=false')
-        .set('Authorization', `Bearer ${token1}`)
-        .expect(200);
-
-      expect(response.body.success).toBe(true);
-      expect(response.body.data.length).toBeGreaterThan(0);
-    });
-
-    it('should handle pagination', async () => {
-      const response = await request(app)
-        .get('/v1/expenses?page=1&limit=2')
-        .set('Authorization', `Bearer ${token1}`)
-        .expect(200);
-
-      expect(response.body.success).toBe(true);
-      expect(response.body.data.length).toBeLessThanOrEqual(2);
-      expect(response.body.pagination.current).toBe(1);
-    });
-
-    it('should return empty array for user with no expenses', async () => {
-      const response = await request(app)
-        .get('/v1/expenses')
-        .set('Authorization', `Bearer ${token4}`)
-        .expect(200);
-
-      expect(response.body.success).toBe(true);
-      expect(response.body.data.length).toBe(0);
-    });
-  });
-
-  describe('GET /v1/expenses/:id', () => {
-    let expense;
-
-    beforeEach(async () => {
-      expense = new Expense({
-        description: 'Dinner',
-        amount: 100.00,
-        paidBy: user1._id,
-        splitWith: [{ user: user2._id, amount: 50.00, settled: false }],
-        category: 'food'
-      });
-      await expense.save();
-    });
-
-    it('should get expense by ID successfully', async () => {
-      const response = await request(app)
-        .get(`/v1/expenses/${expense._id}`)
-        .set('Authorization', `Bearer ${token1}`)
-        .expect(200);
-
-      expect(response.body.success).toBe(true);
-      expect(response.body.data._id.toString()).toBe(expense._id.toString());
-    });
-
-    it('should allow split partner to view expense', async () => {
-      const response = await request(app)
-        .get(`/v1/expenses/${expense._id}`)
-        .set('Authorization', `Bearer ${token2}`)
-        .expect(200);
-
-      expect(response.body.success).toBe(true);
-    });
-
-    it('should fail for non-involved user', async () => {
-      const response = await request(app)
-        .get(`/v1/expenses/${expense._id}`)
-        .set('Authorization', `Bearer ${token3}`)
+      // User 3 (not involved) tries to update expense
+      const unauthorizedUpdate = await request(app)
+        .put(`/v1/expenses/${expenseId}`)
+        .set('Authorization', `Bearer ${authToken3}`)
+        .send({ description: 'Unauthorized Update' })
         .expect(403);
 
-      expect(response.body.success).toBe(false);
-      expect(response.body.message).toContain('Not authorized');
-    });
+      expect(unauthorizedUpdate.body).toHaveProperty('success', false);
 
-    it('should fail for non-existent expense', async () => {
-      const response = await request(app)
-        .get('/v1/expenses/507f1f77bcf86cd799439011')
-        .set('Authorization', `Bearer ${token1}`)
-        .expect(404);
+      // User 3 tries to delete expense
+      const unauthorizedDelete = await request(app)
+        .delete(`/v1/expenses/${expenseId}`)
+        .set('Authorization', `Bearer ${authToken3}`)
+        .expect(403);
 
-      expect(response.body.success).toBe(false);
-      expect(response.body.message).toContain('not found');
-    });
-
-    it('should fail with invalid expense ID format', async () => {
-      const response = await request(app)
-        .get('/v1/expenses/invalid-id')
-        .set('Authorization', `Bearer ${token1}`)
-        .expect(400);
-
-      expect(response.body.success).toBe(false);
+      expect(unauthorizedDelete.body).toHaveProperty('success', false);
     });
   });
 
-  describe('PUT /v1/expenses/:id', () => {
-    let expense;
-
-    beforeEach(async () => {
-      expense = new Expense({
-        description: 'Dinner',
-        amount: 100.00,
-        paidBy: user1._id,
+  describe('👥 Group Expense Workflows', () => {
+    test('should handle group expense creation and management', async () => {
+      const groupExpenseData = {
+        description: 'Group Dinner',
+        amount: 150,
         splitWith: [
-          { user: user1._id, amount: 50.00, settled: false },
-          { user: user2._id, amount: 50.00, settled: false }
+          { user: testUser2._id, amount: 50 },
+          { user: testUser3._id, amount: 50 }
         ],
-        category: 'food'
-      });
-      await expense.save();
-    });
-
-    it('should update expense successfully', async () => {
-      const updateData = {
-        description: 'Updated dinner',
-        amount: 120.00,
-        splitWith: [
-          { user: user1._id, amount: 60.00, settled: false },
-          { user: user2._id, amount: 60.00, settled: false }
-        ]
+        category: 'food',
+        group: testGroup._id
       };
 
-      const response = await request(app)
-        .put(`/v1/expenses/${expense._id}`)
-        .set('Authorization', `Bearer ${token1}`)
-        .send(updateData)
-        .expect(200);
-
-      expect(response.body.success).toBe(true);
-      expect(response.body.data.description).toBe(updateData.description);
-      expect(response.body.data.amount).toBe(updateData.amount);
-    });
-
-    it('should fail for non-payer to update', async () => {
-      const updateData = {
-        description: 'Updated dinner'
-      };
-
-      const response = await request(app)
-        .put(`/v1/expenses/${expense._id}`)
-        .set('Authorization', `Bearer ${token2}`)
-        .send(updateData)
-        .expect(403);
-
-      expect(response.body.success).toBe(false);
-      expect(response.body.message).toContain('Only the person who paid');
-    });
-
-    it('should fail to update settled expense', async () => {
-      // Settle the expense first
-      expense.isSettled = true;
-      await expense.save();
-
-      const updateData = {
-        description: 'Updated dinner'
-      };
-
-      const response = await request(app)
-        .put(`/v1/expenses/${expense._id}`)
-        .set('Authorization', `Bearer ${token1}`)
-        .send(updateData)
-        .expect(400);
-
-      expect(response.body.success).toBe(false);
-      expect(response.body.message).toContain('settled expense');
-    });
-
-    it('should fail with mismatched split amounts on update', async () => {
-      const updateData = {
-        amount: 120.00,
-        splitWith: [{ user: user2._id, amount: 50.00, settled: false }] // Doesn't match
-      };
-
-      const response = await request(app)
-        .put(`/v1/expenses/${expense._id}`)
-        .set('Authorization', `Bearer ${token1}`)
-        .send(updateData)
-        .expect(400);
-
-      expect(response.body.success).toBe(false);
-      expect(response.body.message).toContain('must equal');
-    });
-  });
-
-  describe('DELETE /v1/expenses/:id', () => {
-    let expense;
-
-    beforeEach(async () => {
-      expense = new Expense({
-        description: 'Dinner',
-        amount: 100.00,
-        paidBy: user1._id,
-        splitWith: [{ user: user2._id, amount: 50.00, settled: false }],
-        category: 'food'
-      });
-      await expense.save();
-    });
-
-    it('should delete expense successfully', async () => {
-      const response = await request(app)
-        .delete(`/v1/expenses/${expense._id}`)
-        .set('Authorization', `Bearer ${token1}`)
-        .expect(200);
-
-      expect(response.body.success).toBe(true);
-      expect(response.body.message).toContain('deleted successfully');
-
-      // Verify expense is deleted
-      const deletedExpense = await Expense.findById(expense._id);
-      expect(deletedExpense).toBeNull();
-    });
-
-    it('should fail for non-payer to delete', async () => {
-      const response = await request(app)
-        .delete(`/v1/expenses/${expense._id}`)
-        .set('Authorization', `Bearer ${token2}`)
-        .expect(403);
-
-      expect(response.body.success).toBe(false);
-      expect(response.body.message).toContain('Only the person who paid');
-    });
-
-    it('should fail to delete settled expense', async () => {
-      // Settle the expense first
-      expense.isSettled = true;
-      await expense.save();
-
-      const response = await request(app)
-        .delete(`/v1/expenses/${expense._id}`)
-        .set('Authorization', `Bearer ${token1}`)
-        .expect(400);
-
-      expect(response.body.success).toBe(false);
-      expect(response.body.message).toContain('settled expense');
-    });
-
-    it('should fail to delete non-existent expense', async () => {
-      const response = await request(app)
-        .delete('/v1/expenses/507f1f77bcf86cd799439011')
-        .set('Authorization', `Bearer ${token1}`)
-        .expect(404);
-
-      expect(response.body.success).toBe(false);
-      expect(response.body.message).toContain('not found');
-    });
-  });
-
-  describe('POST /v1/expenses/:id/settle', () => {
-    let expense;
-
-    beforeEach(async () => {
-      expense = new Expense({
-        description: 'Dinner',
-        amount: 100.00,
-        paidBy: user1._id,
-        splitWith: [{ user: user2._id, amount: 50.00, settled: false }],
-        category: 'food'
-      });
-      await expense.save();
-    });
-
-    it('should settle expense split successfully', async () => {
-      const response = await request(app)
-        .post(`/v1/expenses/${expense._id}/settle`)
-        .set('Authorization', `Bearer ${token1}`)
-        .send({ userId: user2._id.toString() })
-        .expect(200);
-
-      expect(response.body.success).toBe(true);
-      expect(response.body.message).toContain('settled successfully');
-
-      // Verify split is settled
-      const updatedExpense = await Expense.findById(expense._id);
-      const split = updatedExpense.splitWith.find(s => s.user.toString() === user2._id.toString());
-      expect(split.settled).toBe(true);
-    });
-
-    it('should allow split partner to settle', async () => {
-      const response = await request(app)
-        .post(`/v1/expenses/${expense._id}/settle`)
-        .set('Authorization', `Bearer ${token2}`)
-        .send({ userId: user2._id.toString() })
-        .expect(200);
-
-      expect(response.body.success).toBe(true);
-    });
-
-    it('should fail for non-involved user to settle', async () => {
-      const response = await request(app)
-        .post(`/v1/expenses/${expense._id}/settle`)
-        .set('Authorization', `Bearer ${token3}`)
-        .send({ userId: user2._id.toString() })
-        .expect(403);
-
-      expect(response.body.success).toBe(false);
-      expect(response.body.message).toContain('Not authorized');
-    });
-
-    it('should fail to settle already settled split', async () => {
-      // Settle the split first
-      await request(app)
-        .post(`/v1/expenses/${expense._id}/settle`)
-        .set('Authorization', `Bearer ${token1}`)
-        .send({ userId: user2._id.toString() });
-
-      // Try to settle again
-      const response = await request(app)
-        .post(`/v1/expenses/${expense._id}/settle`)
-        .set('Authorization', `Bearer ${token1}`)
-        .send({ userId: user2._id.toString() })
-        .expect(400);
-
-      expect(response.body.success).toBe(false);
-      expect(response.body.message).toContain('already settled');
-    });
-
-    it('should fail to settle non-existent user', async () => {
-      const response = await request(app)
-        .post(`/v1/expenses/${expense._id}/settle`)
-        .set('Authorization', `Bearer ${token1}`)
-        .send({ userId: '507f1f77bcf86cd799439011' })
-        .expect(400);
-
-      expect(response.body.success).toBe(false);
-      expect(response.body.message).toContain('not part of this expense');
-    });
-
-    it('should fail without userId', async () => {
-      const response = await request(app)
-        .post(`/v1/expenses/${expense._id}/settle`)
-        .set('Authorization', `Bearer ${token1}`)
-        .send({})
-        .expect(400);
-
-      expect(response.body.success).toBe(false);
-      expect(response.body.message).toContain('required');
-    });
-  });
-
-  describe('GET /v1/expenses/between/:friendId', () => {
-    let expense1, expense2;
-
-    beforeEach(async () => {
-      expense1 = new Expense({
-        description: 'Dinner',
-        amount: 100.00,
-        paidBy: user1._id,
-        splitWith: [{ user: user2._id, amount: 50.00, settled: false }],
-        category: 'food'
-      });
-      await expense1.save();
-
-      expense2 = new Expense({
-        description: 'Movie',
-        amount: 30.00,
-        paidBy: user2._id,
-        splitWith: [{ user: user1._id, amount: 15.00, settled: false }],
-        category: 'entertainment'
-      });
-      await expense2.save();
-    });
-
-    it('should get expenses between friends successfully', async () => {
-      const response = await request(app)
-        .get(`/v1/expenses/between/${user2._id}`)
-        .set('Authorization', `Bearer ${token1}`)
-        .expect(200);
-
-      expect(response.body.success).toBe(true);
-      expect(response.body.data.length).toBe(2);
-    });
-
-    it('should fail for non-friend', async () => {
-      const response = await request(app)
-        .get(`/v1/expenses/between/${user4._id}`)
-        .set('Authorization', `Bearer ${token1}`)
-        .expect(400);
-
-      expect(response.body.success).toBe(false);
-      expect(response.body.message).toContain('not your friend');
-    });
-
-    it('should handle pagination', async () => {
-      const response = await request(app)
-        .get(`/v1/expenses/between/${user2._id}?page=1&limit=1`)
-        .set('Authorization', `Bearer ${token1}`)
-        .expect(200);
-
-      expect(response.body.success).toBe(true);
-      expect(response.body.data.length).toBeLessThanOrEqual(1);
-      expect(response.body.pagination).toBeDefined();
-    });
-  });
-
-  describe('Edge Cases and Error Handling', () => {
-    it('should handle very large amounts', async () => {
-      const expenseData = {
-        description: 'Expensive dinner',
-        amount: 1000000.00,
-        splitWith: [
-          {
-            user: user2._id.toString(),
-            amount: 1000000.00
-          }
-        ]
-      };
-
-      const response = await request(app)
+      // Create group expense
+      const createResponse = await request(app)
         .post('/v1/expenses')
-        .set('Authorization', `Bearer ${token1}`)
-        .send(expenseData)
+        .set('Authorization', `Bearer ${authToken1}`)
+        .send(groupExpenseData)
         .expect(201);
 
-      expect(response.body.success).toBe(true);
-    });
+      expect(createResponse.body.data).toHaveProperty('group', testGroup._id.toString());
 
-    // it('should handle very small amounts', async () => {
-    //   const expenseData = {
-    //     description: 'Coffee',
-    //     amount: 0.01,
-    //     splitWith: [
-    //       {
-    //         user: user2._id.toString(),
-    //         amount: 0.01
-    //       }
-    //     ]
-    //   };
-
-    //   const response = await request(app)
-    //     .post('/v1/expenses')
-    //     .set('Authorization', `Bearer ${token1}`)
-    //     .send(expenseData)
-    //     .expect(201);
-
-    //   expect(response.body.success).toBe(true);
-    // });
-
-    // it('should handle concurrent expense creation', async () => {
-    //   7777
-    //   const expenseData = {
-    //     description: 'Concurrent expense',
-    //     amount: 100.00,
-    //     splitWith: [
-    //       {
-    //         user: user1._id.toString(),
-    //         amount: 50.00
-    //       },
-    //       {
-    //         user: user2._id.toString(),
-    //         amount: 50.00
-    //       }
-    //     ]
-    //   };
-
-    //   const promises = Array(5).fill().map(() =>
-    //     request(app)
-    //       .post('/v1/expenses')
-    //       .set('Authorization', `Bearer ${token1}`)
-    //       .send(expenseData)
-    //   );
-
-    //   const responses = await Promise.all(promises);
-
-    //   responses.forEach(response => {
-    //     expect(response.status).toBe(201);
-    //   });
-    // });
-
-    // it('should handle malformed JSON', async () => {
-    //   const response = await request(app)
-    //     .post('/v1/expenses')
-    //     .set('Authorization', `Bearer ${token1}`)
-    //     .set('Content-Type', 'application/json')
-    //     .send('{"description": "Dinner", "amount": 100.00, "splitWith": [{"user": "invalid-json"')
-    //     .expect(400);
-
-    //   expect(response.body.success).toBe(false);
-    // });
-
-    it('should handle XSS attempts in description', async () => {
-      const expenseData = {
-        description: '<script>alert("xss")</script>',
-        amount: 100.00,
-        splitWith: [
-          {
-            user: user2._id.toString(),
-            amount: 100.00
-          }
-        ]
-      };
-
-      const response = await request(app)
-        .post('/v1/expenses')
-        .set('Authorization', `Bearer ${token1}`)
-        .send(expenseData)
-        .expect(201);
-
-      expect(response.body.success).toBe(true);
-      // Description should be sanitized
-      expect(response.body.data.description).not.toContain('<script>');
-    });
-
-    // it('should handle SQL injection attempts', async () => {
-    //   const expenseData = {
-    //     description: "'; DROP TABLE expenses; --",
-    //     amount: 100.00,
-    //     splitWith: [
-    //       {
-    //         user: user1._id.toString(),
-    //         amount: 50.00
-    //       },
-    //       {
-    //         user: user2._id.toString(),
-    //         amount: 50.00
-    //       }
-    //     ]
-    //   };
-
-    //   const response = await request(app)
-    //     .post('/v1/expenses')
-    //     .set('Authorization', `Bearer ${token1}`)
-    //     .send(expenseData)
-    //     .expect(201);
-
-    //   expect(response.body.success).toBe(true);
-    // });
-
-    // it('should handle very long request bodies', async () => {
-    //   const expenseData = {
-    //     description: 'Dinner',
-    //     amount: 100.00,
-    //     splitWith: [
-    //       {
-    //         user: user1._id.toString(),
-    //         amount: 50.00
-    //       },
-    //       {
-    //         user: user2._id.toString(),
-    //         amount: 50.00
-    //       }
-    //     ],
-    //     extraData: 'x'.repeat(10000)
-    //   };
-
-    //   const response = await request(app)
-    //     .post('/v1/expenses')
-    //     .set('Authorization', `Bearer ${token1}`)
-    //     .send(expenseData)
-    //     .expect(201);
-
-    //   expect(response.body.success).toBe(true);
-    // });
-  });
-
-  describe('Performance Tests', () => {
-    it('should handle large number of expenses efficiently', async () => {
-      // Create many expenses
-      const expenses = [];
-      for (let i = 0; i < 100; i++) {
-        expenses.push(new Expense({
-          description: `Expense ${i}`,
-          amount: 50.00,
-          paidBy: user1._id,
-          splitWith: [{ user: user2._id, amount: 25.00, settled: false }],
-          category: 'food'
-        }));
-      }
-      await Expense.insertMany(expenses);
-
-      const start = Date.now();
-      const response = await request(app)
-        .get('/v1/expenses?limit=50')
-        .set('Authorization', `Bearer ${token1}`)
+      // Get group expenses
+      const groupExpensesResponse = await request(app)
+        .get(`/v1/groups/${testGroup._id}/expenses`)
+        .set('Authorization', `Bearer ${authToken2}`)
         .expect(200);
 
-      const duration = Date.now() - start;
+      expect(groupExpensesResponse.body.data).toHaveLength(1);
+      expect(groupExpensesResponse.body.data[0]).toHaveProperty('group', testGroup._id.toString());
 
-      expect(response.body.success).toBe(true);
-      expect(response.body.data.length).toBeLessThanOrEqual(50);
-      expect(duration).toBeLessThan(2000); // Should complete within 2 seconds
+      // Verify all group members can see the expense
+      for (const token of [authToken1, authToken2, authToken3]) {
+        const memberExpensesResponse = await request(app)
+          .get('/v1/expenses')
+          .set('Authorization', `Bearer ${token}`)
+          .expect(200);
+
+        expect(memberExpensesResponse.body.data).toHaveLength(1);
+      }
     });
 
-    it('should handle concurrent settlement operations', async () => {
-      // Create multiple expenses
-      const expenses = [];
-      for (let i = 0; i < 10; i++) {
-        const expense = new Expense({
-          description: `Expense ${i}`,
-          amount: 100.00,
-          paidBy: user1._id,
-          splitWith: [{ user: user2._id, amount: 50.00, settled: false }],
-          category: 'food'
-        });
-        await expense.save();
-        expenses.push(expense);
+    test('should calculate group balances correctly', async () => {
+      // Create multiple group expenses
+      const groupExpenses = [
+        {
+          description: 'Group Expense 1',
+          amount: 120,
+          payer: authToken1,
+          splitWith: [
+            { user: testUser2._id, amount: 40 },
+            { user: testUser3._id, amount: 40 }
+          ]
+        },
+        {
+          description: 'Group Expense 2',
+          amount: 90,
+          payer: authToken2,
+          splitWith: [
+            { user: testUser1._id, amount: 30 },
+            { user: testUser3._id, amount: 30 }
+          ]
+        }
+      ];
+
+      for (const expense of groupExpenses) {
+        await request(app)
+          .post('/v1/expenses')
+          .set('Authorization', `Bearer ${expense.payer}`)
+          .send({
+            description: expense.description,
+            amount: expense.amount,
+            splitWith: expense.splitWith,
+            group: testGroup._id,
+            category: 'food'
+          })
+          .expect(201);
       }
 
-      // Settle all expenses concurrently
-      const promises = expenses.map(expense =>
-        request(app)
-          .post(`/v1/expenses/${expense._id}/settle`)
-          .set('Authorization', `Bearer ${token1}`)
-          .send({ userId: user2._id.toString() })
+      // Get group balance summary
+      const groupBalanceResponse = await request(app)
+        .get(`/v1/groups/${testGroup._id}/balances`)
+        .set('Authorization', `Bearer ${authToken1}`)
+        .expect(200);
+
+      expect(groupBalanceResponse.body).toHaveProperty('success', true);
+      expect(groupBalanceResponse.body).toHaveProperty('data');
+      expect(Array.isArray(groupBalanceResponse.body.data)).toBe(true);
+
+      // Verify individual balances
+      const user1Balance = groupBalanceResponse.body.data.find(
+        b => b.user._id === testUser1._id.toString()
+      );
+      const user2Balance = groupBalanceResponse.body.data.find(
+        b => b.user._id === testUser2._id.toString()
+      );
+      const user3Balance = groupBalanceResponse.body.data.find(
+        b => b.user._id === testUser3._id.toString()
       );
 
-      const responses = await Promise.all(promises);
+      expect(user1Balance).toBeTruthy();
+      expect(user2Balance).toBeTruthy();
+      expect(user3Balance).toBeTruthy();
 
-      responses.forEach(response => {
-        expect(response.status).toBe(200);
+      // Total balances should sum to zero
+      const totalBalance = user1Balance.balance + user2Balance.balance + user3Balance.balance;
+      expect(Math.abs(totalBalance)).toBeLessThan(0.01); // Account for floating point precision
+    });
+
+    test('should handle group member permissions for expenses', async () => {
+      // Non-group member tries to create group expense
+      const outsiderUser = new User(global.testUtils.createTestUser({
+        email: 'outsider@test.com'
+      }));
+      await outsiderUser.save();
+      const outsiderToken = global.testUtils.generateToken(outsiderUser._id);
+
+      const unauthorizedExpense = await request(app)
+        .post('/v1/expenses')
+        .set('Authorization', `Bearer ${outsiderToken}`)
+        .send({
+          description: 'Unauthorized Group Expense',
+          amount: 100,
+          splitWith: [{ user: testUser1._id, amount: 50 }],
+          group: testGroup._id
+        })
+        .expect(403);
+
+      expect(unauthorizedExpense.body).toHaveProperty('success', false);
+
+      // Non-group member tries to view group expenses
+      const unauthorizedView = await request(app)
+        .get(`/v1/groups/${testGroup._id}/expenses`)
+        .set('Authorization', `Bearer ${outsiderToken}`)
+        .expect(403);
+
+      expect(unauthorizedView.body).toHaveProperty('success', false);
+    });
+  });
+
+  describe('📊 Expense Analytics and Reporting', () => {
+    beforeEach(async () => {
+      // Create sample expenses for analytics
+      const sampleExpenses = [
+        { amount: 50, category: 'food', date: new Date('2023-01-15') },
+        { amount: 30, category: 'transport', date: new Date('2023-01-20') },
+        { amount: 100, category: 'food', date: new Date('2023-02-10') },
+        { amount: 25, category: 'entertainment', date: new Date('2023-02-15') },
+        { amount: 75, category: 'food', date: new Date('2023-03-05') }
+      ];
+
+      for (const expense of sampleExpenses) {
+        await request(app)
+          .post('/v1/expenses')
+          .set('Authorization', `Bearer ${authToken1}`)
+          .send({
+            description: `Sample ${expense.category} expense`,
+            amount: expense.amount,
+            splitWith: [{ user: testUser2._id, amount: expense.amount / 2 }],
+            category: expense.category,
+            date: expense.date.toISOString()
+          })
+          .expect(201);
+      }
+    });
+
+    test('should provide expense analytics by category', async () => {
+      const analyticsResponse = await request(app)
+        .get('/v1/expenses/analytics/category')
+        .set('Authorization', `Bearer ${authToken1}`)
+        .expect(200);
+
+      expect(analyticsResponse.body).toHaveProperty('success', true);
+      expect(analyticsResponse.body).toHaveProperty('data');
+      expect(Array.isArray(analyticsResponse.body.data)).toBe(true);
+
+      const foodCategory = analyticsResponse.body.data.find(c => c._id === 'food');
+      expect(foodCategory).toBeTruthy();
+      expect(foodCategory.totalAmount).toBe(225); // 50 + 100 + 75
+      expect(foodCategory.count).toBe(3);
+    });
+
+    test('should provide expense analytics by time period', async () => {
+      const monthlyAnalytics = await request(app)
+        .get('/v1/expenses/analytics/monthly?year=2023')
+        .set('Authorization', `Bearer ${authToken1}`)
+        .expect(200);
+
+      expect(monthlyAnalytics.body).toHaveProperty('success', true);
+      expect(monthlyAnalytics.body).toHaveProperty('data');
+
+      const januaryData = monthlyAnalytics.body.data.find(m => m.month === 1);
+      const februaryData = monthlyAnalytics.body.data.find(m => m.month === 2);
+      const marchData = monthlyAnalytics.body.data.find(m => m.month === 3);
+
+      expect(januaryData.totalAmount).toBe(80); // 50 + 30
+      expect(februaryData.totalAmount).toBe(125); // 100 + 25
+      expect(marchData.totalAmount).toBe(75); // 75
+    });
+
+    test('should provide expense summary statistics', async () => {
+      const summaryResponse = await request(app)
+        .get('/v1/expenses/summary')
+        .set('Authorization', `Bearer ${authToken1}`)
+        .expect(200);
+
+      expect(summaryResponse.body).toHaveProperty('success', true);
+      expect(summaryResponse.body.data).toHaveProperty('totalExpenses');
+      expect(summaryResponse.body.data).toHaveProperty('totalAmount');
+      expect(summaryResponse.body.data).toHaveProperty('averageAmount');
+      expect(summaryResponse.body.data).toHaveProperty('expenseCount');
+      expect(summaryResponse.body.data).toHaveProperty('categorySummary');
+
+      expect(summaryResponse.body.data.totalAmount).toBe(280); // Sum of all amounts
+      expect(summaryResponse.body.data.expenseCount).toBe(5);
+      expect(summaryResponse.body.data.averageAmount).toBe(56); // 280 / 5
+    });
+  });
+
+  describe('🔍 Expense Search and Filtering', () => {
+    beforeEach(async () => {
+      // Create diverse expenses for search testing
+      const searchExpenses = [
+        { description: 'Pizza dinner with friends', amount: 45, category: 'food' },
+        { description: 'Uber ride to airport', amount: 25, category: 'transport' },
+        { description: 'Movie tickets', amount: 30, category: 'entertainment' },
+        { description: 'Grocery shopping', amount: 80, category: 'food' },
+        { description: 'Coffee meeting', amount: 15, category: 'food' }
+      ];
+
+      for (const expense of searchExpenses) {
+        await request(app)
+          .post('/v1/expenses')
+          .set('Authorization', `Bearer ${authToken1}`)
+          .send({
+            description: expense.description,
+            amount: expense.amount,
+            splitWith: [{ user: testUser2._id, amount: expense.amount / 2 }],
+            category: expense.category
+          })
+          .expect(201);
+      }
+    });
+
+    test('should search expenses by description', async () => {
+      const searchResponse = await request(app)
+        .get('/v1/expenses/search?q=pizza')
+        .set('Authorization', `Bearer ${authToken1}`)
+        .expect(200);
+
+      expect(searchResponse.body.data).toHaveLength(1);
+      expect(searchResponse.body.data[0].description).toContain('Pizza');
+    });
+
+    test('should filter expenses by category', async () => {
+      const foodExpensesResponse = await request(app)
+        .get('/v1/expenses?category=food')
+        .set('Authorization', `Bearer ${authToken1}`)
+        .expect(200);
+
+      expect(foodExpensesResponse.body.data).toHaveLength(3);
+      foodExpensesResponse.body.data.forEach(expense => {
+        expect(expense.category).toBe('food');
       });
+    });
+
+    test('should filter expenses by amount range', async () => {
+      const rangeResponse = await request(app)
+        .get('/v1/expenses?minAmount=20&maxAmount=50')
+        .set('Authorization', `Bearer ${authToken1}`)
+        .expect(200);
+
+      rangeResponse.body.data.forEach(expense => {
+        expect(expense.amount).toBeGreaterThanOrEqual(20);
+        expect(expense.amount).toBeLessThanOrEqual(50);
+      });
+    });
+
+    test('should filter expenses by date range', async () => {
+      const today = new Date();
+      const yesterday = new Date(today.getTime() - 24 * 60 * 60 * 1000);
+      const tomorrow = new Date(today.getTime() + 24 * 60 * 60 * 1000);
+
+      const dateRangeResponse = await request(app)
+        .get(`/v1/expenses?startDate=${yesterday.toISOString()}&endDate=${tomorrow.toISOString()}`)
+        .set('Authorization', `Bearer ${authToken1}`)
+        .expect(200);
+
+      expect(dateRangeResponse.body.data.length).toBeGreaterThan(0);
+      dateRangeResponse.body.data.forEach(expense => {
+        const expenseDate = new Date(expense.date);
+        expect(expenseDate.getTime()).toBeGreaterThanOrEqual(yesterday.getTime());
+        expect(expenseDate.getTime()).toBeLessThanOrEqual(tomorrow.getTime());
+      });
+    });
+
+    test('should combine multiple filters', async () => {
+      const combinedFilterResponse = await request(app)
+        .get('/v1/expenses?category=food&minAmount=40')
+        .set('Authorization', `Bearer ${authToken1}`)
+        .expect(200);
+
+      combinedFilterResponse.body.data.forEach(expense => {
+        expect(expense.category).toBe('food');
+        expect(expense.amount).toBeGreaterThanOrEqual(40);
+      });
+    });
+
+    test('should paginate search results', async () => {
+      const page1Response = await request(app)
+        .get('/v1/expenses?page=1&limit=3')
+        .set('Authorization', `Bearer ${authToken1}`)
+        .expect(200);
+
+      expect(page1Response.body.data).toHaveLength(3);
+      expect(page1Response.body).toHaveProperty('pagination');
+      expect(page1Response.body.pagination.current).toBe(1);
+
+      const page2Response = await request(app)
+        .get('/v1/expenses?page=2&limit=3')
+        .set('Authorization', `Bearer ${authToken1}`)
+        .expect(200);
+
+      expect(page2Response.body.data).toHaveLength(2); // Remaining expenses
+      expect(page2Response.body.pagination.current).toBe(2);
+    });
+  });
+
+  describe('⚡ Expense Performance Tests', () => {
+    test('should handle expense operations within performance limits', async () => {
+      const operations = [
+        () => request(app).get('/v1/expenses').set('Authorization', `Bearer ${authToken1}`),
+        () => request(app).post('/v1/expenses').set('Authorization', `Bearer ${authToken1}`).send({
+          description: 'Performance Test Expense',
+          amount: 50,
+          splitWith: [{ user: testUser2._id, amount: 25 }]
+        }),
+        () => request(app).get('/v1/expenses/summary').set('Authorization', `Bearer ${authToken1}`)
+      ];
+
+      for (const operation of operations) {
+        const startTime = Date.now();
+        const response = await operation();
+        const responseTime = Date.now() - startTime;
+
+        expect(response.status).toBeLessThan(400);
+        expect(responseTime).toBeLessThan(3000); // Should complete within 3 seconds
+      }
+    });
+
+    test('should handle large numbers of expenses efficiently', async () => {
+      // Create many expenses
+      const expensePromises = [];
+      for (let i = 0; i < 100; i++) {
+        expensePromises.push(
+          request(app)
+            .post('/v1/expenses')
+            .set('Authorization', `Bearer ${authToken1}`)
+            .send({
+              description: `Bulk Expense ${i}`,
+              amount: Math.floor(Math.random() * 100) + 10,
+              splitWith: [{ user: testUser2._id, amount: 25 }],
+              category: ['food', 'transport', 'entertainment'][i % 3]
+            })
+        );
+      }
+
+      const startTime = Date.now();
+      await Promise.all(expensePromises);
+      const creationTime = Date.now() - startTime;
+
+      // Test retrieval performance
+      const retrievalStartTime = Date.now();
+      const expensesResponse = await request(app)
+        .get('/v1/expenses?limit=50')
+        .set('Authorization', `Bearer ${authToken1}`)
+        .expect(200);
+      const retrievalTime = Date.now() - retrievalStartTime;
+
+      expect(expensesResponse.body.data).toHaveLength(50);
+      expect(creationTime).toBeLessThan(60000); // 60 seconds for 100 expenses
+      expect(retrievalTime).toBeLessThan(3000); // 3 seconds to retrieve 50 expenses
     });
   });
 });

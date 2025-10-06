@@ -20,7 +20,12 @@
     "test:run-performance": "node tests/run-tests.js --performance",
     "test:run-edge-cases": "node tests/run-tests.js --edge-cases",
     "test:run-database": "node tests/run-tests.js --database",
-    "test:stress": "artillery run tests/performance/artillery.config.yml",
+    "test:run-load": "node tests/run-tests.js --load",
+    "test:run-stress": "node tests/run-tests.js --stress",
+    "test:artillery": "artillery run tests/performance/artillery.config.yml",
+    "test:artillery-dev": "artillery run tests/performance/artillery.config.yml -e development",
+    "test:load": "jest --testPathPattern=load --verbose",
+    "test:stress": "jest --testPathPattern=stress --verbose",
     "test:ci": "jest --ci --coverage --watchAll=false"
   },
   "keywords": [

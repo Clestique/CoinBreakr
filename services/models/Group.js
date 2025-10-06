@@ -72,12 +72,20 @@ groupSchema.virtual('admins').get(function() {
 
 // Instance method to check if user is member
 groupSchema.methods.isMember = function(userId) {
-  return this.members.some(member => member.user.toString() === userId.toString());
+  return this.members.some(member => {
+    // Handle both populated and unpopulated user field
+    const memberUserId = member.user._id || member.user;
+    return memberUserId.toString() === userId.toString();
+  });
 };
 
 // Instance method to check if user is admin
 groupSchema.methods.isAdmin = function(userId) {
-  const member = this.members.find(member => member.user.toString() === userId.toString());
+  const member = this.members.find(member => {
+    // Handle both populated and unpopulated user field
+    const memberUserId = member.user._id || member.user;
+    return memberUserId.toString() === userId.toString();
+  });
   return member && member.role === 'admin';
 };
 
@@ -97,7 +105,11 @@ groupSchema.methods.addMember = function(userId, role = 'member') {
 
 // Instance method to remove member
 groupSchema.methods.removeMember = function(userId) {
-  const memberIndex = this.members.findIndex(member => member.user.toString() === userId.toString());
+  const memberIndex = this.members.findIndex(member => {
+    // Handle both populated and unpopulated user field
+    const memberUserId = member.user._id || member.user;
+    return memberUserId.toString() === userId.toString();
+  });
   if (memberIndex === -1) {
     throw new Error('User is not a member of this group');
   }
@@ -107,7 +119,11 @@ groupSchema.methods.removeMember = function(userId) {
 
 // Instance method to update member role
 groupSchema.methods.updateMemberRole = function(userId, newRole) {
-  const member = this.members.find(member => member.user.toString() === userId.toString());
+  const member = this.members.find(member => {
+    // Handle both populated and unpopulated user field
+    const memberUserId = member.user._id || member.user;
+    return memberUserId.toString() === userId.toString();
+  });
   if (!member) {
     throw new Error('User is not a member of this group');
   }

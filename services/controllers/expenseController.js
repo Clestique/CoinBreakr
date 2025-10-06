@@ -56,7 +56,7 @@ const createExpense = async (req, res) => {
     if (groupId) {
       group = await Group.findById(groupId);
       if (!group) {
-        return res.status(404).json({
+        return res.status(400).json({
           success: false,
           message: 'Group not found'
         });
@@ -64,7 +64,7 @@ const createExpense = async (req, res) => {
       
       // Check if user is a member of the group
       if (!group.isMember(req.userId)) {
-        return res.status(403).json({
+        return res.status(400).json({
           success: false,
           message: 'You are not a member of this group'
         });
@@ -86,14 +86,6 @@ const createExpense = async (req, res) => {
               message: 'All split partners must be members of the group'
             });
           }
-        } else {
-          // For individual expenses, check if user is a friend
-          if (!user.friends.includes(userId)) {
-            return res.status(400).json({
-              success: false,
-              message: 'All split partners must be your friends'
-            });
-          }
         }
       }
     }
@@ -103,9 +95,9 @@ const createExpense = async (req, res) => {
     
     // Validate that split amounts match the total expense amount
     if (Math.abs(totalSplitAmount - numericAmount) > 0.01) {
-      return res.status(400).json({
+      return res.status(408).json({
         success: false,
-        message: 'Split amounts must equal the total expense amount'
+        message: `${totalSplitAmount} ${numericAmount}`
       });
     }
 
@@ -203,6 +195,7 @@ const getUserExpenses = async (req, res) => {
       data: expenses,
       pagination: {
         current: parseInt(page),
+        limit: parseInt(limit),
         pages: Math.ceil(total / limit),
         total
       }
