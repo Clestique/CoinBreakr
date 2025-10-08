@@ -2,7 +2,6 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
-const xss = require('xss-clean');
 require('dotenv').config();
 
 // Import modules
@@ -39,9 +38,6 @@ if (process.env.NODE_ENV === 'production') {
 // Body parsing middleware
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
-
-// XSS protection middleware
-app.use(xss());
 
 // Request logging middleware
 app.use((req, res, next) => {
