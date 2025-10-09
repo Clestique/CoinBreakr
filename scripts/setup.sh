@@ -91,17 +91,13 @@ fi
 # -----------------------------------------------------------------------------
 echo "📁 Deploying application files to ${APP_DIR}..."
 mkdir -p "${APP_DIR}"
-
-# Expecting app.zip or docker-compose.yml in same dir as setup.sh
 SRC_DIR="$(pwd)"
-ZIP_FILE="${SRC_DIR}/app.zip"
 
-if [ -f "${ZIP_FILE}" ]; then
-  unzip -o "${ZIP_FILE}" -d "${APP_DIR}"
-else
-  echo "⚠️ app.zip not found, checking for existing files..."
-  cp -r ${SRC_DIR}/* "${APP_DIR}/" || echo "No files copied."
-fi
+# Copy everything including hidden files
+shopt -s dotglob
+cp -r "${SRC_DIR}/"* "${APP_DIR}/"
+shopt -u dotglob
+
 
 # -----------------------------------------------------------------------------
 # 5. Set File Ownership and Permissions
@@ -116,7 +112,7 @@ chmod -R 750 "${APP_DIR}"
 if [ -f "${APP_DIR}/${COMPOSE_FILE}" ]; then
   echo "🚀 Starting application containers..."
   cd "${APP_DIR}"
-  docker-compose pull
+  docker-compose pull 
   docker-compose up -d
 else
   echo "❌ docker-compose.yml not found in ${APP_DIR}. Cannot start containers."

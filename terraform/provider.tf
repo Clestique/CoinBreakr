@@ -1,4 +1,5 @@
 provider "google" {
-  project = "coinbreakr"
-  region  = "us-central1"
+  project = var.project_id
+  region  = var.region
+  zone    = var.zone
 }
