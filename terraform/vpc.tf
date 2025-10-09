@@ -28,6 +28,7 @@ resource "google_compute_instance" "firstnstance" {
 
   metadata = {
     enable-osconfig = "TRUE"
+    ssh-keys        = "rutuja:${file("C:/Users/Rutuja/.ssh/gcp-key.pub")}"
   }
 
   name = "firstnstance"
@@ -61,24 +62,5 @@ resource "google_compute_instance" "firstnstance" {
   }
 
   tags = ["http-server", "https-server"]
-  zone = "us-central1-a"
-}
-
-module "ops_agent_policy" {
-  source        = "github.com/terraform-google-modules/terraform-google-cloud-operations/modules/ops-agent-policy"
-  project       = "coinbreakr"
-  zone          = "us-central1-a"
-  assignment_id = "goog-ops-agent-v2-x86-template-1-4-0-us-central1-a"
-  agents_rule = {
-    package_state = "installed"
-    version       = "latest"
-  }
-  instance_filter = {
-    all = false
-    inclusion_labels = [{
-      labels = {
-        goog-ops-agent-policy = "v2-x86-template-1-4-0"
-      }
-    }]
-  }
+  zone = var.region
 }
