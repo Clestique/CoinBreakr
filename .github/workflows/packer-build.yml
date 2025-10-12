@@ -60,7 +60,7 @@ jobs:
       - name: 🏗️ Build Custom Image
         working-directory: ./packer
         run: |
-          packer build -var "project_id=coinbreakr" -var "source_image_family=ubuntu-2404-lts-arm64" -var "source_image_project_id=ubuntu-os-cloud" -var "image_name=coinbreakr-image-{{timestamp}}" -var "zone=us-central1-a" -var "machine_type=e2-medium" -var "ssh_username=packer" -var "disk_size=10" -var "disk_type=pd-standard" -var "network=default" -var "subnetwork=default" packer.pkr.hcl
+          packer build -var "project_id=coinbreakr" -var "source_image_family=ubuntu-2404-lts-amd64" -var "source_image_project_id=ubuntu-os-cloud" -var "image_name=coinbreakr-image-{{timestamp}}" -var "zone=us-central1-a" -var "machine_type=e2-medium" -var "ssh_username=packer" -var "disk_size=10" -var "disk_type=pd-standard" -var "network=default" -var "subnetwork=default" packer.pkr.hcl
 
       - name: ✅ Verify Image Build
         run: |

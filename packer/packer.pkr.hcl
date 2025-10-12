@@ -46,7 +46,7 @@ variable "machine_type" {
 variable "ssh_username" {
   type        = string
   description = "The SSH username to use for connecting to the build instance."
-  default     = "ubuntu"
+  default     = "packer"
 }
 
 variable "disk_size" {
