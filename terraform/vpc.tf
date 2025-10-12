@@ -32,6 +32,12 @@ resource "google_compute_firewall" "allow_node_app" {
   target_tags   = ["cheap-instance"] # Must match the VM tag
 }
 
+# Get the latest Coinbreakr image
+data "google_compute_image" "latest_coinbreakr" {
+  family  = var.image_family
+  project = var.project_id
+}
+
 # VM Instance
 resource "google_compute_instance" "vm_instance" {
   name         = var.instance_name
@@ -40,7 +46,7 @@ resource "google_compute_instance" "vm_instance" {
 
   boot_disk {
     initialize_params {
-      image = "projects/ubuntu-os-cloud/global/images/ubuntu-minimal-2404-noble-amd64-v20251002"
+      image = data.google_compute_image.latest_coinbreakr.self_link
       size  = 10
       type  = "pd-balanced"
     }

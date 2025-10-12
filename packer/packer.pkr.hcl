@@ -25,6 +25,12 @@ variable "image_name" {
   default     = "coinbreakr-image"
 }
 
+variable "image_family" {
+  type        = string
+  description = "The image family to use for the new image."
+  default     = "coinbreakr-image-family"
+}
+
 variable "source_image_family" {
   type        = string
   description = "The source image family to use as the base for the new image."
@@ -78,6 +84,7 @@ source "googlecompute" "ubuntu" {
   source_image_family     = var.source_image_family
   source_image_project_id = [var.source_image_project_id]
   image_name              = var.image_name
+  image_family            = var.image_family
   zone                    = var.zone
   machine_type            = var.machine_type
   ssh_username            = var.ssh_username

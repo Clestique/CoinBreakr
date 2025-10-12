@@ -18,6 +18,11 @@ variable "instance_name" {
   type        = string
 }
 
+variable "image_family" {
+  description = "Image family for the VM"
+  type        = string
+}
+
 variable "machine_type" {
   description = "Machine type for the instance"
   type        = string
