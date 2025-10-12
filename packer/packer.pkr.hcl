@@ -8,69 +8,69 @@ packer {
 }
 
 variable "project_id" {
-  type    = string
+  type        = string
   description = "The GCP project ID where the image will be created."
-  default = "my-gcp-project"
+  default     = "my-gcp-project"
 }
 
 variable "zone" {
-  type    = string
+  type        = string
   description = "The GCP zone where the image will be created."
-  default = "us-central1-a"
+  default     = "us-central1-a"
 }
 
 variable "image_name" {
-  type    = string
+  type        = string
   description = "The name of the image to be created."
-  default = "coinbreakr-image"
+  default     = "coinbreakr-image"
 }
 
 variable "source_image_family" {
-  type    = string
+  type        = string
   description = "The source image family to use as the base for the new image."
-  default = "ubuntu-2204-lts"
+  default     = "ubuntu-2204-lts"
 }
 
 variable "source_image_project_id" {
-  type    = string
+  type        = string
   description = "The project ID of the source image."
-  default = "my-gcp-project"
+  default     = "my-gcp-project"
 }
 
 variable "machine_type" {
-  type    = string
+  type        = string
   description = "The machine type to use for the build instance."
-  default = "e2-medium"
+  default     = "e2-medium"
 }
 
 variable "ssh_username" {
-  type    = string
+  type        = string
   description = "The SSH username to use for connecting to the build instance."
-  default = "ubuntu"
+  default     = "ubuntu"
 }
 
 variable "disk_size" {
-  type    = number
+  type        = number
   description = "The size of the boot disk in GB."
-  default = 10
+  default     = 10
 }
 
 variable "disk_type" {
-  type    = string
+  type        = string
   description = "The type of the boot disk."
-  default = "pd-standard"
+  default     = "pd-standard"
 }
 
 variable "network" {
-  type    = string
+  type        = string
   description = "The network to attach the build instance to."
-  default = "default"
+  default     = "default"
 }
 
 variable "subnetwork" {
-  type    = string
+  type        = string
   description = "The subnetwork to attach the build instance to."
-  default = "default"
+  default     = "default"
 }
 
 source "googlecompute" "ubuntu" {
