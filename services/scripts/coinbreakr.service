@@ -1,0 +1,22 @@
+[Unit]
+Description=CoinBreakr Docker Compose Service
+After=docker.service network-online.target
+Requires=docker.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+WorkingDirectory=/opt/coinbreakr
+ExecStartPre=/bin/sleep 10
+ExecStart=/usr/local/bin/docker-compose -f /opt/coinbreakr/docker-compose.yml up -d --remove-orphans
+ExecStop=/usr/local/bin/docker-compose -f /opt/coinbreakr/docker-compose.yml down
+User=root
+Group=root
+TimeoutStartSec=300
+TimeoutStopSec=60
+StandardOutput=journal
+StandardError=journal
+Restart=no  # (not needed for oneshot)
+
+[Install]
+WantedBy=multi-user.target

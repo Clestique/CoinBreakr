@@ -1,0 +1,67 @@
+name: Build Custom Image with Packer
+
+on:
+  push:
+    branches:
+      - main   
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  build-image:
+    name: Build GCP Image via Packer
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 🧾 Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: ☁️ Authenticate to Google Cloud (Workload Identity)
+        uses: google-github-actions/auth@v1
+        with:
+          workload_identity_provider: projects/${{ secrets.PROJECT_ID }}/locations/global/workloadIdentityPools/github-pool/providers/github-provider
+          service_account: ${{ secrets.SERVICE_ACCOUNT }}
+
+      - name: 🛠️ Set up Google Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ secrets.GCP_PROJECT_ID }}
+
+      - name: 🔍 Verify Authentication
+        run: gcloud auth list
+
+      - name: 🧩 Install Packer
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y unzip
+          curl -fsSL https://releases.hashicorp.com/packer/1.11.0/packer_1.11.0_linux_amd64.zip -o packer.zip
+          sudo unzip packer.zip -d /usr/local/bin/
+          packer --version
+
+      - name: 📦 Check services.zip
+        run: |
+          if [ ! -f packer/services.zip ]; then
+            echo "❌ Error: packer/services.zip not found!"
+            exit 1
+          else
+            echo "✅ services.zip exists, ready for Packer."
+          fi
+
+      - name: 🧠 Initialize Packer
+        working-directory: ./packer
+        run: packer init .
+
+      - name: ✅ Validate Template
+        working-directory: ./packer
+        run: packer validate packer.pkr.hcl
+
+      - name: 🏗️ Build Custom Image
+        working-directory: ./packer
+        run: |
+          packer build -var "project_id=${{ secrets.GCP_PROJECT_ID }}" -var "source_image_family=${{ secrets.GCP_SOURCE_IMAGE_FAMILY }}" -var "source_image_project_id=${{ secrets.GCP_SOURCE_IMAGE_PROJECT_ID }}" -var "image_name=${{ secrets.GCP_IMAGE_NAME }}" -var "zone=${{ secrets.GCP_ZONE }}" -var "machine_type=${{ secrets.GCP_MACHINE_TYPE }}" -var "ssh_username=${{ secrets.GCP_SSH_USERNAME }}" -var "disk_size=${{ secrets.GCP_DISK_SIZE }}" -var "disk_type=${{ secrets.GCP_DISK_TYPE }}" -var "network=${{ secrets.GCP_NETWORK }}" -var "subnetwork=${{ secrets.GCP_SUBNETWORK }}" packer.pkr.hcl
+
+      - name: ✅ Verify Image Build
+        run: |
+          gcloud compute images describe ${{ secrets.GCP_IMAGE_NAME }} --project ${{ secrets.GCP_PROJECT_ID }}

@@ -16,7 +16,7 @@ set -euo pipefail
 
 APP_NAME="coinbreakr"
 APP_DIR="/opt/${APP_NAME}"
-APP_USER="coinbreakrapp"
+APP_USER="vaisu.bhut"
 APP_GROUP="${APP_NAME}"
 COMPOSE_FILE="docker-compose.yml"
 
@@ -106,23 +106,24 @@ echo "🔐 Setting permissions for ${APP_DIR}..."
 chown -R "${APP_USER}:${APP_GROUP}" "${APP_DIR}"
 chmod -R 750 "${APP_DIR}"
 
+
 # -----------------------------------------------------------------------------
-# 6. Start Application via Docker Compose
+# 6. Install systemd unit and enable service
 # -----------------------------------------------------------------------------
-if [ -f "${APP_DIR}/${COMPOSE_FILE}" ]; then
-  echo "🚀 Starting application containers..."
-  cd "${APP_DIR}"
-  docker-compose pull 
-  docker-compose up -d
+SERVICE_NAME="coinbreakr"
+SERVICE_FILE_SRC="/opt/coinbreakr/scripts/${SERVICE_NAME}.service"
+SERVICE_FILE_DST="/etc/systemd/system/${SERVICE_NAME}.service"
+
+if [ -f "${SERVICE_FILE_SRC}" ]; then
+  echo "📥 Installing systemd unit ${SERVICE_FILE_DST}..."
+  cp "${SERVICE_FILE_SRC}" "${SERVICE_FILE_DST}"
+  chmod 644 "${SERVICE_FILE_DST}"
+  systemctl daemon-reload
+  systemctl enable "${SERVICE_NAME}.service"
 else
-  echo "❌ docker-compose.yml not found in ${APP_DIR}. Cannot start containers."
+  echo "⚠️  Systemd unit ${SERVICE_FILE_SRC} not found. Exiting."
+  exit 1
 fi
 
-# -----------------------------------------------------------------------------
-# 7. Verify containers
-# -----------------------------------------------------------------------------
-echo "🧾 Checking running containers..."
-docker ps
-
-echo "🎉 Setup complete!"
-echo "Your application is running via Docker Compose in ${APP_DIR}"
+# 🚀 Skip container start during image build
+echo "✅ Service installed and enabled. It will start automatically on instance boot."

@@ -35,7 +35,7 @@ resource "google_compute_firewall" "allow_node_app" {
 # VM Instance
 resource "google_compute_instance" "vm_instance" {
   name         = var.instance_name
-  machine_type = "e2-micro"
+  machine_type = var.machine_type
   zone         = var.zone
 
   boot_disk {
