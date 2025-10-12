@@ -21,13 +21,13 @@ jobs:
       - name: ☁️ Authenticate to Google Cloud (Workload Identity)
         uses: google-github-actions/auth@v1
         with:
-          workload_identity_provider: projects/${{ secrets.PROJECT_ID }}/locations/global/workloadIdentityPools/github-pool/providers/github-provider
-          service_account: ${{ secrets.SERVICE_ACCOUNT }}
+          workload_identity_provider: projects/coinbreakr/locations/global/workloadIdentityPools/github-pool/providers/github-provider
+          service_account: packer-github@coinbreakr.iam.gserviceaccount.com
 
       - name: 🛠️ Set up Google Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
         with:
-          project_id: ${{ secrets.GCP_PROJECT_ID }}
+          project_id: coinbreakr
 
       - name: 🔍 Verify Authentication
         run: gcloud auth list
@@ -60,8 +60,8 @@ jobs:
       - name: 🏗️ Build Custom Image
         working-directory: ./packer
         run: |
-          packer build -var "project_id=${{ secrets.GCP_PROJECT_ID }}" -var "source_image_family=${{ secrets.GCP_SOURCE_IMAGE_FAMILY }}" -var "source_image_project_id=${{ secrets.GCP_SOURCE_IMAGE_PROJECT_ID }}" -var "image_name=${{ secrets.GCP_IMAGE_NAME }}" -var "zone=${{ secrets.GCP_ZONE }}" -var "machine_type=${{ secrets.GCP_MACHINE_TYPE }}" -var "ssh_username=${{ secrets.GCP_SSH_USERNAME }}" -var "disk_size=${{ secrets.GCP_DISK_SIZE }}" -var "disk_type=${{ secrets.GCP_DISK_TYPE }}" -var "network=${{ secrets.GCP_NETWORK }}" -var "subnetwork=${{ secrets.GCP_SUBNETWORK }}" packer.pkr.hcl
+          packer build -var "project_id=coinbreakr" -var "source_image_family=ubuntu-2404-lts-arm64" -var "source_image_project_id=ubuntu-os-cloud" -var "image_name=coinbreakr-image-{{timestamp}}" -var "zone=us-central1-a" -var "machine_type=e2-medium" -var "ssh_username=packer" -var "disk_size=10" -var "disk_type=pd-standard" -var "network=default" -var "subnetwork=default" packer.pkr.hcl
 
       - name: ✅ Verify Image Build
         run: |
-          gcloud compute images describe ${{ secrets.GCP_IMAGE_NAME }} --project ${{ secrets.GCP_PROJECT_ID }}
+          gcloud compute images describe coinbreakr-image-{{timestamp}} --project coinbreakr
