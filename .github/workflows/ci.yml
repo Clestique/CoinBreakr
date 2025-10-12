@@ -81,13 +81,20 @@ jobs:
         with:
           version: "1.14.0" 
 
+      - name: Install Packer Plugins
+        working-directory: ./packer
+        run: |
+          packer init .
+
       - name: packer fmt (check)
+        working-directory: ./packer
         run: |
           packer fmt -check -recursive .
 
       - name: packer validate
+        working-directory: ./packer
         run: |
-          packer validate packer.pkr.hcl
+          packer validate .
 
   # Terraform Format & Validation
   terraform:
