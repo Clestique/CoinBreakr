@@ -32,6 +32,7 @@ resource "google_compute_firewall" "allow_node_app" {
   target_tags   = ["cheap-instance"] # Must match the VM tag
 }
 
+
 # Get the latest Coinbreakr image
 data "google_compute_image" "latest_coinbreakr" {
   family  = var.image_family

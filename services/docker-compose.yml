@@ -5,9 +5,15 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: node_server
+    container_name: coinbreakr_app
     ports:
       - "3000:3000"
     environment:
       - MONGO_URL=${MONGO_URL}
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/v1/healthz"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
