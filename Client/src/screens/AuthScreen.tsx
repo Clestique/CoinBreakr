@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -22,15 +22,31 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [errors, setErrors] = useState<{ email?: string; password?: string; name?: string; form?: string }>({});
+  const emailInputRef = useRef<TextInput | null>(null);
+  const passwordInputRef = useRef<TextInput | null>(null);
+  const nameInputRef = useRef<TextInput | null>(null);
 
   const handleAuth = async () => {
-    if (!email || !password) {
-      Alert.alert('Error', 'Please fill in all required fields');
-      return;
-    }
+    // reset previous errors
+    setErrors({});
 
-    if (!isLogin && !name) {
-      Alert.alert('Error', 'Please enter your name');
+    // client-side required validation
+    if (!email || !password || (!isLogin && !name)) {
+      const newErrors: { email?: string; password?: string; name?: string } = {};
+      if (!email) newErrors.email = 'Email is required';
+      if (!password) newErrors.password = 'Password is required';
+      if (!isLogin && !name) newErrors.name = 'Full name is required';
+      setErrors(newErrors);
+
+      // focus the first invalid field
+      if (newErrors.name && nameInputRef.current) {
+        nameInputRef.current.focus();
+      } else if (newErrors.email && emailInputRef.current) {
+        emailInputRef.current.focus();
+      } else if (newErrors.password && passwordInputRef.current) {
+        passwordInputRef.current.focus();
+      }
       return;
     }
 
@@ -38,7 +54,6 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
 
     try {
       let response;
-      
       if (isLogin) {
         const loginData: LoginRequest = { email, password };
         response = await apiService.login(loginData);
@@ -48,34 +63,41 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
       }
 
       if (response.success && response.data) {
-        // Store authentication data
         await authStorage.setToken(response.data.token);
         await authStorage.setUser(response.data.user);
-
-        Alert.alert(
-          'Success',
-          isLogin ? 'Login successful!' : 'Registration successful!',
-          [
-            {
-              text: 'OK',
-              onPress: () => {
-                // Navigate to main app
-                console.log('Navigate to main app');
-                // You can add navigation logic here
-                // navigation.navigate('MainApp');
-              },
-            },
-          ]
-        );
+        // Navigate to Profile screen after successful auth
+        navigation.reset({ index: 0, routes: [{ name: 'Profile' }] });
       } else {
-        Alert.alert('Error', response.message || 'Authentication failed');
+        setErrors({ form: response.message || 'Authentication failed' });
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Auth error:', error);
-      Alert.alert(
-        'Error',
-        error instanceof Error ? error.message : 'An unexpected error occurred'
-      );
+      // Normalize ApiError shape coming from apiService
+      const apiError: any = error && error.success === false ? error : null;
+      if (apiError && apiError.errors) {
+        const fieldErrors: { email?: string; password?: string; name?: string; form?: string } = {};
+        if (apiError.errors.email && apiError.errors.email.length) {
+          fieldErrors.email = apiError.errors.email[0];
+        }
+        if (apiError.errors.password && apiError.errors.password.length) {
+          fieldErrors.password = apiError.errors.password[0];
+        }
+        if (apiError.errors.name && apiError.errors.name.length) {
+          fieldErrors.name = apiError.errors.name[0];
+        }
+        setErrors({ ...fieldErrors, form: apiError.message });
+
+        // focus in priority order: name (for register), email, password
+        if (!isLogin && fieldErrors.name && nameInputRef.current) {
+          nameInputRef.current.focus();
+        } else if (fieldErrors.email && emailInputRef.current) {
+          emailInputRef.current.focus();
+        } else if (fieldErrors.password && passwordInputRef.current) {
+          passwordInputRef.current.focus();
+        }
+      } else {
+        setErrors({ form: apiError ? apiError.message : 'An unexpected error occurred' });
+      }
     } finally {
       setIsLoading(false);
     }
@@ -97,39 +119,73 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
             <View style={styles.inputContainer}>
               <Text style={styles.label}>Full Name</Text>
               <TextInput
-                style={styles.input}
+                ref={nameInputRef}
+                style={[
+                  styles.input,
+                  errors.name ? styles.inputError : null,
+                ]}
                 value={name}
-                onChangeText={setName}
+                onChangeText={(text) => {
+                  setName(text);
+                  if (errors.name) setErrors({ ...errors, name: undefined });
+                }}
                 placeholder="Enter your full name"
                 placeholderTextColor="#9CA3AF"
+                returnKeyType="next"
+                onSubmitEditing={() => emailInputRef.current?.focus()}
               />
+              {errors.name ? <Text style={styles.errorText}>{errors.name}</Text> : null}
             </View>
           )}
 
           <View style={styles.inputContainer}>
             <Text style={styles.label}>Email</Text>
             <TextInput
-              style={styles.input}
+              ref={emailInputRef}
+              style={[
+                styles.input,
+                errors.email ? styles.inputError : null,
+              ]}
               value={email}
-              onChangeText={setEmail}
+              onChangeText={(text) => {
+                setEmail(text);
+                if (errors.email) setErrors({ ...errors, email: undefined });
+              }}
               placeholder="Enter your email"
               placeholderTextColor="#9CA3AF"
               keyboardType="email-address"
               autoCapitalize="none"
+              returnKeyType="next"
+              onSubmitEditing={() => passwordInputRef.current?.focus()}
             />
+            {errors.email ? <Text style={styles.errorText}>{errors.email}</Text> : null}
           </View>
 
           <View style={styles.inputContainer}>
             <Text style={styles.label}>Password</Text>
             <TextInput
-              style={styles.input}
+              ref={passwordInputRef}
+              style={[
+                styles.input,
+                errors.password ? styles.inputError : null,
+              ]}
               value={password}
-              onChangeText={setPassword}
+              onChangeText={(text) => {
+                setPassword(text);
+                if (errors.password) setErrors({ ...errors, password: undefined });
+              }}
               placeholder="Enter your password"
               placeholderTextColor="#9CA3AF"
               secureTextEntry
+              returnKeyType="done"
+              onSubmitEditing={handleAuth}
             />
+            {errors.password ? <Text style={styles.errorText}>{errors.password}</Text> : null}
           </View>
+
+          {errors.form ? (
+            <Text style={styles.formErrorText}>{errors.form}</Text>
+          ) : null}
 
           <TouchableOpacity 
             style={[styles.authButton, isLoading && styles.authButtonDisabled]} 
@@ -212,6 +268,9 @@ const styles = StyleSheet.create({
     color: '#1A1A1A',
     backgroundColor: '#FFFFFF',
   },
+  inputError: {
+    borderColor: '#DC2626',
+  },
   authButton: {
     backgroundColor: '#059669',
     paddingVertical: 16,
@@ -237,6 +296,17 @@ const styles = StyleSheet.create({
     color: '#059669',
     fontSize: 16,
     fontWeight: '500',
+  },
+  errorText: {
+    color: '#DC2626',
+    fontSize: 13,
+    marginTop: 6,
+  },
+  formErrorText: {
+    color: '#DC2626',
+    fontSize: 14,
+    marginTop: 8,
+    textAlign: 'center',
   },
 });
 

@@ -9,6 +9,7 @@ import OnboardingScreen2 from '../screens/OnboardingScreen2';
 import OnboardingScreen3 from '../screens/OnboardingScreen3';
 import OnboardingScreen4 from '../screens/OnboardingScreen4';
 import AuthScreen from '../screens/AuthScreen';
+import ProfileScreen from '../screens/ProfileScreen';
 
 const Stack = createStackNavigator();
 
@@ -70,6 +71,7 @@ const AppNavigator: React.FC = () => {
           }}
         />
         <Stack.Screen name="Auth" component={AuthScreen} />
+        <Stack.Screen name="Profile" component={ProfileScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );
