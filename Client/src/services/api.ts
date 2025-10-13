@@ -1,4 +1,4 @@
-const BASE_URL = 'http://34.31.200.66:3000/v1';
+const BASE_URL = 'http://34.41.49.170:3000/v1';
 
 export interface LoginRequest {
   email: string;
@@ -57,18 +57,42 @@ class ApiService {
 
     try {
       const response = await fetch(url, config);
-      const data = await response.json();
+
+      // Try to parse JSON; guard against empty body
+      let data: any = null;
+      try {
+        data = await response.json();
+      } catch (_) {
+        data = null;
+      }
 
       if (!response.ok) {
-        throw new Error(data.message || `HTTP error! status: ${response.status}`);
+        // Normalize error shape to include field errors if provided by backend
+        const normalizedError: ApiError = {
+          success: false,
+          message:
+            (data && (data.message || data.error)) ||
+            `HTTP error! status: ${response.status}`,
+          errors: data && data.errors ? data.errors : undefined,
+        };
+        // Throw a typed error object to be handled by callers
+        throw normalizedError as unknown as Error;
       }
 
-      return data;
-    } catch (error) {
-      if (error instanceof Error) {
-        throw new Error(error.message);
+      return data as T;
+    } catch (error: any) {
+      // Re-throw normalized errors from above
+      if (error && error.success === false) {
+        throw error as ApiError;
       }
-      throw new Error('An unexpected error occurred');
+
+      if (error instanceof Error) {
+        // Wrap generic errors into ApiError for a consistent contract
+        const wrapped: ApiError = { success: false, message: error.message };
+        throw wrapped as unknown as Error;
+      }
+      const fallback: ApiError = { success: false, message: 'An unexpected error occurred' };
+      throw fallback as unknown as Error;
     }
   }
 
