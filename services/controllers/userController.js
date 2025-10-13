@@ -27,74 +27,33 @@ const getUserProfile = async (req, res) => {
     }
 };
 
-// const updateUserProfile = async (req, res) => {
-//     try {
-//         const { name, email, profileImage, phoneNumber, role, _id } = req.body;
+const updateUserProfile = async (req, res) => {
+    try {
+        const { name, profileImage, phoneNumber } = req.body;
+        if (!name && !profileImage && !phoneNumber) {
+            return res.status(400).json({
+                success: false,
+                message: 'At least one field is required'
+            });
+        }
 
-//         if (email) {
-//             return res.status(400).json({
-//                 success: false,
-//                 message: 'Email cannot be updated'
-//             });
-//         }
+        // Update the user profile
+        name && await User.findByIdAndUpdate(req.userId, { name }, { new: true, updatedAt: new Date() });
+        phoneNumber && await User.findByIdAndUpdate(req.userId, { phoneNumber }, { new: true, updatedAt: new Date() });       
+        profileImage && await User.findByIdAndUpdate(req.userId, { profileImage }, { new: true, updatedAt: new Date() });
 
-//         if (role) {
-//             return res.status(400).json({
-//                 success: false,
-//                 message: 'Role cannot be updated'
-//             });
-//         }
-
-//         if (_id) {
-//             return res.status(400).json({
-//                 success: false,
-//                 message: 'ID cannot be updated'
-//             });
-//         }
-
-//         if (name !== undefined && (name.trim().length > 30 || name.trim().length < 2)) {
-//             return res.status(400).json({
-//                 success: false,
-//                 message: 'Name cannot be more than 30 characters or less than 2 characters'
-//             });
-//         }
-
-//         if (phoneNumber !== undefined) {
-//             if (phoneNumber.length > 15 || phoneNumber.length < 10) {
-//                 return res.status(400).json({
-//                     success: false,
-//                     message: 'Phone number cannot be more than 15 characters or less than 10 characters'
-//                 });
-//             }
-            
-//             if (!phoneNumber.startsWith('+')) {
-//                 return res.status(400).json({
-//                     success: false,
-//                     message: 'Phone number must start with +'
-//                 });
-//             }
-//         }        
-
-//         // Build update object with only provided fields
-//         const updateFields = { updatedAt: new Date() };
-//         if (name) updateFields.name = name;
-//         if (profileImage) updateFields.profileImage = profileImage;
-//         if (phoneNumber) updateFields.phoneNumber = phoneNumber;
-
-//         const user = await User.findByIdAndUpdate(req.userId, updateFields, { new: true, runValidators: true });
-//         res.status(200).json({
-//             success: true,
-//             data: user
-//         });
-//     } catch (error) {
-//         console.error('Update user profile error:', error);
-//         res.status(500).json({
-//             success: false,
-//             message: 'Server error',
-//             error: error.message
-//         });
-//     }
-// };
+        return res.status(200).json({
+            success: true,
+            message: 'User profile updated successfully'
+        });
+        } catch (error) {
+            res.status(500).json({
+            success: false,
+            message: 'Server error',
+            error: error.message
+        });
+    }
+};
 
 const changePassword = async (req, res) => {
     try {
@@ -144,40 +103,6 @@ const changePassword = async (req, res) => {
     } catch (error) {
         console.error('Change password error:', error);
         res.status(500).json({
-            success: false,
-            message: 'Server error',
-            error: error.message
-        });
-    }
-};
-
-const updateUserProfile = async (req, res) => {
-    try {
-        const { name, password, profileImage, phoneNumber } = req.body;
-        if (!name && !password && !profileImage && !phoneNumber) {
-            return res.status(400).json({
-                success: false,
-                message: 'At least one field is required'
-            });
-        }
-
-        // Update the user profile
-        name && await User.findByIdAndUpdate(req.userId, { name }, { new: true });
-        phoneNumber && await User.findByIdAndUpdate(req.userId, { phoneNumber }, { new: true });       
-        profileImage && await User.findByIdAndUpdate(req.userId, { profileImage }, { new: true });
-        // Update the user password
-        if (password) {
-            const salt = await bcrypt.genSalt(10);
-            const hashedPassword = await bcrypt.hash(password, salt);
-            await User.findByIdAndUpdate(req.userId, { password: hashedPassword }, { new: true });
-        }
-
-        return res.status(200).json({
-            success: true,
-            message: 'User profile updated successfully'
-        });
-        } catch (error) {
-            res.status(500).json({
             success: false,
             message: 'Server error',
             error: error.message

@@ -1,27 +1,47 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, StyleSheet, SafeAreaView, Image, TextInput, TouchableOpacity, ActivityIndicator, ScrollView } from 'react-native';
-import { profileService, UserProfile } from '../services/profile';
+// @ts-ignore - use require to avoid type requirement if expo-image-picker types are missing
+const ImagePicker: any = require('expo-image-picker');
+import { useNavigation } from '@react-navigation/native';
+import { authStorage } from '../services/authStorage';
+import { profileService } from '../services/profile';
+import SectionCard from '../components/SectionCard';
 
 const ProfileScreen: React.FC = () => {
-  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const navigation = useNavigation<any>();
+  const [profile, setProfile] = useState<any | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [saving, setSaving] = useState<boolean>(false);
   const [changingPassword, setChangingPassword] = useState<boolean>(false);
   const [editMode, setEditMode] = useState<boolean>(false);
-  const [errors, setErrors] = useState<{ name?: string; phone?: string; imageUrl?: string; form?: string; passwordForm?: string; currentPassword?: string; newPassword?: string }>({});
-
+  const [errors, setErrors] = useState<{ name?: string; phoneNumber?: string; profileImage?: string; form?: string; passwordForm?: string; currentPassword?: string; newPassword?: string }>({});
+  const [success, setSuccess] = useState<{ form?: string; passwordForm?: string }>({});
   const nameRef = useRef<TextInput | null>(null);
   const phoneRef = useRef<TextInput | null>(null);
   const imageRef = useRef<TextInput | null>(null);
   const currentPasswordRef = useRef<TextInput | null>(null);
   const newPasswordRef = useRef<TextInput | null>(null);
 
-  const [form, setForm] = useState<{ name: string; phone?: string; imageUrl?: string }>({ name: '' });
+  const [form, setForm] = useState<{ name: string; phoneNumber?: string; profileImage?: string }>({ name: '' });
   const [passwordForm, setPasswordForm] = useState<{ currentPassword: string; newPassword: string }>({ currentPassword: '', newPassword: '' });
 
   useEffect(() => {
     loadProfile();
+    // request media permissions for image picker
+    (async () => {
+      try {
+        await ImagePicker.requestMediaLibraryPermissionsAsync();
+      } catch (_) {}
+    })();
   }, []);
+
+  // Auto-dismiss success bars
+  useEffect(() => {
+    if (success.form || success.passwordForm) {
+      const t = setTimeout(() => setSuccess({}), 2500);
+      return () => clearTimeout(t);
+    }
+  }, [success.form, success.passwordForm]);
 
   const loadProfile = async () => {
     setLoading(true);
@@ -30,7 +50,11 @@ const ProfileScreen: React.FC = () => {
       const res = await profileService.getProfile();
       if (res.success && res.data) {
         setProfile(res.data);
-        setForm({ name: res.data.name, phone: res.data.phone, imageUrl: res.data.imageUrl });
+        setForm({
+          name: res.data.name,
+          phoneNumber: (res.data as any).phoneNumber,
+          profileImage: (res.data as any).profileImage,
+        });
       } else {
         setErrors({ form: res.message || 'Failed to load profile' });
       }
@@ -51,10 +75,16 @@ const ProfileScreen: React.FC = () => {
     }
     setSaving(true);
     try {
-      const res = await profileService.updateProfile({ name: form.name, phone: form.phone, imageUrl: form.imageUrl });
-      if (res.success && res.data) {
-        setProfile(res.data);
+      const res = await profileService.updateProfile({ name: form.name, phoneNumber: form.phoneNumber, profileImage: form.profileImage });
+      if (res.success) {
+        setProfile((prev: any) => ({
+          ...(prev || {}),
+          name: form.name,
+          phoneNumber: form.phoneNumber,
+          profileImage: form.profileImage,
+        }));
         setEditMode(false);
+        setSuccess({ form: 'Profile updated successfully' });
       } else {
         setErrors({ form: res.message || 'Update failed' });
       }
@@ -62,12 +92,12 @@ const ProfileScreen: React.FC = () => {
       const apiErr: any = error && error.success === false ? error : null;
       const fieldErrors: any = {};
       if (apiErr?.errors?.name?.length) fieldErrors.name = apiErr.errors.name[0];
-      if (apiErr?.errors?.phone?.length) fieldErrors.phone = apiErr.errors.phone[0];
-      if (apiErr?.errors?.imageUrl?.length) fieldErrors.imageUrl = apiErr.errors.imageUrl[0];
+      if (apiErr?.errors?.phoneNumber?.length) fieldErrors.phoneNumber = apiErr.errors.phoneNumber[0];
+      if (apiErr?.errors?.profileImage?.length) fieldErrors.profileImage = apiErr.errors.profileImage[0];
       setErrors({ ...fieldErrors, form: apiErr ? apiErr.message : 'An unexpected error occurred' });
       if (fieldErrors.name) nameRef.current?.focus();
-      else if (fieldErrors.phone) phoneRef.current?.focus();
-      else if (fieldErrors.imageUrl) imageRef.current?.focus();
+      else if (fieldErrors.phoneNumber) phoneRef.current?.focus();
+      else if (fieldErrors.profileImage) imageRef.current?.focus();
     } finally {
       setSaving(false);
     }
@@ -91,7 +121,7 @@ const ProfileScreen: React.FC = () => {
       const res = await profileService.changePassword(passwordForm);
       if (res.success) {
         setPasswordForm({ currentPassword: '', newPassword: '' });
-        setErrors({ passwordForm: 'Password changed successfully' });
+        setSuccess({ passwordForm: 'Password changed successfully' });
       } else {
         setErrors({ passwordForm: res.message || 'Failed to change password' });
       }
@@ -106,6 +136,40 @@ const ProfileScreen: React.FC = () => {
     } finally {
       setChangingPassword(false);
     }
+  };
+
+  const onPickImage = async () => {
+    if (!editMode) return;
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        quality: 0.8,
+        base64: true,
+      });
+      // Newer expo-image-picker returns { canceled, assets }
+      // @ts-ignore
+      if (result.canceled) return;
+      // @ts-ignore
+      const asset = result.assets && result.assets.length ? result.assets[0] : null;
+      if (asset && asset.base64) {
+        const mime = (asset.mimeType as string) || 'image/jpeg';
+        const dataUri = `data:${mime};base64,${asset.base64}`;
+        setForm({ ...form, profileImage: dataUri });
+      }
+    } catch (e) {
+      // silently ignore picker errors, user can retry
+    }
+  };
+
+  const onLogout = async () => {
+    try {
+      await profileService.logout();
+    } catch (_) {}
+    await authStorage.clearAuth();
+    // Navigate to Auth stack
+    // @ts-ignore
+    navigation.reset({ index: 0, routes: [{ name: 'Auth' }] });
   };
 
   if (loading) {
@@ -123,21 +187,34 @@ const ProfileScreen: React.FC = () => {
       <ScrollView contentContainerStyle={styles.content}>
         <Text style={styles.headerTitle}>Profile</Text>
 
+        {success.form ? (
+          <View style={styles.toastSuccess}>
+            <Text style={styles.toastText}>{success.form}</Text>
+          </View>
+        ) : null}
+        {success.passwordForm ? (
+          <View style={styles.toastSuccess}>
+            <Text style={styles.toastText}>{success.passwordForm}</Text>
+          </View>
+        ) : null}
+
         {errors.form ? <Text style={styles.formError}>{errors.form}</Text> : null}
 
         <View style={styles.profileHeader}>
-          <Image
-            source={{ uri: form.imageUrl || 'https://placehold.co/96x96' }}
-            style={styles.avatar}
-          />
+          <TouchableOpacity onPress={onPickImage} activeOpacity={editMode ? 0.7 : 1}>
+            <Image
+              source={{ uri: form.profileImage || 'https://placehold.co/96x96' }}
+              style={styles.avatar}
+            />
+            {editMode ? <Text style={styles.changePhotoText}>Change Photo</Text> : null}
+          </TouchableOpacity>
           <View style={{ flex: 1 }}>
             <Text style={styles.nameText}>{profile?.name || '-'}</Text>
             <Text style={styles.emailText}>{profile?.email || '-'}</Text>
           </View>
         </View>
 
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Details</Text>
+        <SectionCard title="Profile Details">
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Name</Text>
             <TextInput
@@ -163,41 +240,18 @@ const ProfileScreen: React.FC = () => {
             <Text style={styles.label}>Phone</Text>
             <TextInput
               ref={phoneRef}
-              style={[styles.input, errors.phone ? styles.inputError : null]}
+              style={[styles.input, errors.phoneNumber ? styles.inputError : null]}
               editable={editMode}
-              value={form.phone || ''}
+              value={form.phoneNumber || ''}
               onChangeText={(t) => {
-                setForm({ ...form, phone: t });
-                if (errors.phone) setErrors({ ...errors, phone: undefined });
+                setForm({ ...form, phoneNumber: t });
+                if (errors.phoneNumber) setErrors({ ...errors, phoneNumber: undefined });
               }}
               keyboardType="phone-pad"
               placeholder="Enter phone number"
             />
-            {errors.phone ? <Text style={styles.errorText}>{errors.phone}</Text> : null}
+            {errors.phoneNumber ? <Text style={styles.errorText}>{errors.phoneNumber}</Text> : null}
           </View>
-
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Image URL</Text>
-            <TextInput
-              ref={imageRef}
-              style={[styles.input, errors.imageUrl ? styles.inputError : null]}
-              editable={editMode}
-              value={form.imageUrl || ''}
-              onChangeText={(t) => {
-                setForm({ ...form, imageUrl: t });
-                if (errors.imageUrl) setErrors({ ...errors, imageUrl: undefined });
-              }}
-              placeholder="https://..."
-              autoCapitalize="none"
-            />
-            {errors.imageUrl ? <Text style={styles.errorText}>{errors.imageUrl}</Text> : null}
-          </View>
-
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Last Login</Text>
-            <Text style={styles.readonlyValue}>{profile?.lastLogin ? new Date(profile.lastLogin).toLocaleString() : '-'}</Text>
-          </View>
-
           <View style={styles.row}>
             <TouchableOpacity
               style={[styles.button, editMode ? styles.buttonSecondary : styles.buttonPrimary]}
@@ -219,17 +273,16 @@ const ProfileScreen: React.FC = () => {
                 onPress={() => {
                   setEditMode(false);
                   setErrors({});
-                  if (profile) setForm({ name: profile.name, phone: profile.phone, imageUrl: profile.imageUrl });
+                  if (profile) setForm({ name: profile.name, phoneNumber: (profile as any).phoneNumber, profileImage: profile.profileImage });
                 }}
               >
                 <Text style={styles.buttonText}>Cancel</Text>
               </TouchableOpacity>
             ) : null}
           </View>
-        </View>
+        </SectionCard>
 
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Change Password</Text>
+        <SectionCard title="Security">
           {errors.passwordForm ? <Text style={styles.passwordFormMessage}>{errors.passwordForm}</Text> : null}
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Current Password</Text>
@@ -266,7 +319,31 @@ const ProfileScreen: React.FC = () => {
           <TouchableOpacity style={[styles.button, styles.buttonPrimary]} onPress={onChangePassword} disabled={changingPassword}>
             {changingPassword ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.buttonText}>Update Password</Text>}
           </TouchableOpacity>
-        </View>
+        </SectionCard>
+
+        <SectionCard title="Account Closure">
+          <Text style={styles.helperText}>Request to permanently close your account. This action is reviewed and may take time.</Text>
+          <TouchableOpacity
+            style={[styles.button, styles.warningButton]}
+            onPress={async () => {
+              try {
+                const res = await profileService.requestAccountClosure();
+                if (res.success) setSuccess({ form: res.message || 'Closure request submitted' });
+                else setErrors({ form: res.message || 'Request failed' });
+              } catch (e: any) {
+                setErrors({ form: e?.message || 'Request failed' });
+              }
+            }}
+          >
+            <Text style={styles.buttonText}>Request Account Closure</Text>
+          </TouchableOpacity>
+        </SectionCard>
+
+        <SectionCard title="Danger Zone">
+          <TouchableOpacity style={[styles.button, styles.dangerButton]} onPress={onLogout}>
+            <Text style={styles.buttonText}>Logout</Text>
+          </TouchableOpacity>
+        </SectionCard>
       </ScrollView>
     </SafeAreaView>
   );
@@ -304,6 +381,12 @@ const styles = StyleSheet.create({
     borderRadius: 36,
     marginRight: 16,
     backgroundColor: '#F3F4F6',
+  },
+  changePhotoText: {
+    marginTop: 4,
+    fontSize: 11,
+    color: '#059669',
+    textAlign: 'center',
   },
   nameText: {
     fontSize: 20,
@@ -374,10 +457,21 @@ const styles = StyleSheet.create({
   buttonTertiary: {
     backgroundColor: '#9CA3AF',
   },
+  warningButton: {
+    backgroundColor: '#F59E0B',
+  },
+  dangerButton: {
+    backgroundColor: '#DC2626',
+  },
   buttonText: {
     color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '600',
+  },
+  helperText: {
+    color: '#6B7280',
+    fontSize: 13,
+    marginBottom: 12,
   },
   errorText: {
     color: '#DC2626',
@@ -394,8 +488,18 @@ const styles = StyleSheet.create({
     fontSize: 14,
     marginBottom: 8,
   },
+  toastSuccess: {
+    backgroundColor: '#10B981',
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 10,
+    marginBottom: 10,
+  },
+  toastText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    textAlign: 'center',
+  },
 });
 
 export default ProfileScreen;
-
-

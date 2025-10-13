@@ -9,7 +9,7 @@ import {
   Alert,
   ActivityIndicator,
 } from 'react-native';
-import { apiService, LoginRequest, RegisterRequest } from '../services/api';
+import { authService, LoginRequest, RegisterRequest } from '../services/auth';
 import { authStorage } from '../services/authStorage';
 
 interface AuthScreenProps {
@@ -56,10 +56,10 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
       let response;
       if (isLogin) {
         const loginData: LoginRequest = { email, password };
-        response = await apiService.login(loginData);
+        response = await authService.login(loginData);
       } else {
         const registerData: RegisterRequest = { name, email, password };
-        response = await apiService.register(registerData);
+        response = await authService.register(registerData);
       }
 
       if (response.success && response.data) {
@@ -72,7 +72,7 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
       }
     } catch (error: any) {
       console.error('Auth error:', error);
-      // Normalize ApiError shape coming from apiService
+      // Normalize ApiError shape coming from authService
       const apiError: any = error && error.success === false ? error : null;
       if (apiError && apiError.errors) {
         const fieldErrors: { email?: string; password?: string; name?: string; form?: string } = {};

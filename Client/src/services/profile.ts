@@ -6,9 +6,8 @@ export interface UserProfile {
   id: string;
   name: string;
   email: string;
-  phone?: string;
+  phoneNumber?: string;
   imageUrl?: string;
-  lastLogin?: string;
 }
 
 export interface ProfileResponse {
@@ -19,8 +18,8 @@ export interface ProfileResponse {
 
 export interface UpdateProfileRequest {
   name?: string;
-  phone?: string;
-  imageUrl?: string;
+  phoneNumber?: string; // compatibility with alternative backend field names
+  profileImage?: string; // base64 data URI
 }
 
 export interface ChangePasswordRequest {
@@ -45,12 +44,8 @@ class ProfileService {
     const token = await authStorage.getToken();
     const url = `${this.baseURL}${endpoint}`;
 
-    // Debug: log token being used
-    console.log('[ProfileService] Using token:', token);
-
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
-      'Accept': 'application/json',
     };
     if (token) headers['Authorization'] = `Bearer ${token}`;
 
@@ -63,8 +58,6 @@ class ProfileService {
     };
 
     try {
-      console.log('[ProfileService] Making request to:', url);
-      console.log('[ProfileService] Request config:', config);
       const response = await fetch(url, config);
 
       let data: any = null;
@@ -75,11 +68,6 @@ class ProfileService {
       }
 
       if (!response.ok) {
-        console.log('[ProfileService] Request failed', {
-          url,
-          status: response.status,
-          data,
-        });
         const normalized: ApiErrorProfile = {
           success: false,
           message: (data && (data.message || data.error)) || `HTTP error! status: ${response.status}`,
@@ -90,7 +78,6 @@ class ProfileService {
 
       return data as T;
     } catch (error: any) {
-      console.log('[ProfileService] Caught error', error);
       if (error && error.success === false) throw error as ApiErrorProfile;
       const fallback: ApiErrorProfile = { success: false, message: error?.message || 'An unexpected error occurred' };
       throw fallback as unknown as Error;
@@ -112,6 +99,18 @@ class ProfileService {
     return this.makeAuthedRequest<{ success: boolean; message: string }>('/users/change-password', {
       method: 'PATCH',
       body: JSON.stringify(payload),
+    });
+  }
+
+  logout(): Promise<{ success: boolean; message: string }> {
+    return this.makeAuthedRequest<{ success: boolean; message: string }>('/auth/logout', {
+      method: 'POST',
+    });
+  }
+
+  requestAccountClosure(): Promise<{ success: boolean; message: string }> {
+    return this.makeAuthedRequest<{ success: boolean; message: string }>('/users/request-closure', {
+      method: 'POST',
     });
   }
 }

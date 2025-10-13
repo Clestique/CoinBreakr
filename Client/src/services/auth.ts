@@ -30,7 +30,7 @@ export interface ApiError {
   errors?: Record<string, string[]>;
 }
 
-class ApiService {
+class AuthService {
   private baseURL: string;
 
   constructor(baseURL: string) {
@@ -109,12 +109,6 @@ class ApiService {
       body: JSON.stringify(userData),
     });
   }
-
-  async logout(): Promise<{ success: boolean; message: string }> {
-    return this.makeRequest<{ success: boolean; message: string }>('/auth/logout', {
-      method: 'POST',
-    });
-  }
 }
 
-export const apiService = new ApiService(BASE_URL);
+export const authService = new AuthService(BASE_URL);

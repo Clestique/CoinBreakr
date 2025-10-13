@@ -19,6 +19,9 @@ router.get('/profile', authenticateToken, getUserProfile);
 // Update user profile
 router.patch('/profile', authenticateToken, updateUserProfile);
 
+// Change password
+router.patch('/change-password', authenticateToken, changePassword);
+
 // Search users
 router.get('/', authenticateToken, searchUsers);
 
@@ -36,8 +39,5 @@ router.get('/friends/:friendId/balance', authenticateToken, getBalanceWithFriend
 
 // Get all balances
 router.get('/balances', authenticateToken, getAllBalances);
-
-// Change password
-router.patch('/change-password', authenticateToken, changePassword);
 
 module.exports = router;
