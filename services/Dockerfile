@@ -4,6 +4,9 @@ FROM node:22
 # Set working directory inside the container
 WORKDIR /usr/src/app
 
+# Install curl for health checks
+RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
+
 # Copy package files
 COPY package*.json ./
 
