@@ -1,15 +1,17 @@
 const jwt = require('jsonwebtoken');
+const dotenv = require('dotenv');
+dotenv.config();
 
 // Generate JWT token
 const generateToken = (payload) => {
-  return jwt.sign(payload, process.env.JWT_SECRET || 'your-super-secret-jwt-key-here', {
-    expiresIn: process.env.JWT_EXPIRES_IN || '7d'
+  return jwt.sign(payload, process.env.JWT_SECRET, {
+    expiresIn: process.env.JWT_EXPIRES_IN
   });
 };
 
 // Verify JWT token
 const verifyToken = (token) => {
-  return jwt.verify(token, process.env.JWT_SECRET || 'your-super-secret-jwt-key-here');
+  return jwt.verify(token, process.env.JWT_SECRET);
 };
 
 module.exports = {

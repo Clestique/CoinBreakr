@@ -1,4 +1,4 @@
-const jwt = require('jsonwebtoken');
+const { verifyToken } = require('../utils/jwt');
 const User = require('../models/User');
 
 // Middleware to verify JWT token
@@ -16,7 +16,7 @@ const authenticateToken = async (req, res, next) => {
       });
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-super-secret-jwt-key-here');
+    const decoded = verifyToken(token);
     
     const user = await User.findById(decoded.id).select('-password');
     

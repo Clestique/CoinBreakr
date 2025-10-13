@@ -1,4 +1,4 @@
-const BASE_URL = 'http://34.41.49.170:3000/v1';
+const BASE_URL = 'http://104.197.213.168:3000/v1';
 
 export interface LoginRequest {
   email: string;

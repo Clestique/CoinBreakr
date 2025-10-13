@@ -1,6 +1,6 @@
 import { authStorage } from './authStorage';
 
-const BASE_URL = 'http://34.41.49.170:3000/v1';
+const BASE_URL = 'http://104.197.213.168:3000/v1';
 
 export interface UserProfile {
   id: string;
@@ -63,6 +63,8 @@ class ProfileService {
     };
 
     try {
+      console.log('[ProfileService] Making request to:', url);
+      console.log('[ProfileService] Request config:', config);
       const response = await fetch(url, config);
 
       let data: any = null;
