@@ -70,8 +70,27 @@ jobs:
         run: |
           COMMIT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)  # Short SHA
           IMAGE_NAME="coinbreakr-$COMMIT_SHA"
-          echo "🏗️ Building image: $IMAGE_NAME"
-          packer build -var "project_id=coinbreakr" -var "source_image_family=ubuntu-2404-lts-amd64" -var "source_image_project_id=ubuntu-os-cloud" -var "image_name=$IMAGE_NAME" -var "image_family=coinbreakr-image-family" -var "zone=us-central1-a" -var "machine_type=e2-standard-2" -var "ssh_username=packer" -var "disk_size=10" -var "disk_type=pd-standard" -var "network=default" -var "subnetwork=default" packer.pkr.hcl
+          BRANCH_NAME="${{ github.ref_name }}"
+          if [ "$BRANCH_NAME" = "main" ]; then
+            IMAGE_FAMILY="coinbreakr-production-family"
+          else
+            IMAGE_FAMILY="coinbreakr-staging-family"
+          fi
+          echo "🏗️ Building image: $IMAGE_NAME (family: $IMAGE_FAMILY)"
+          packer build \
+            -var "project_id=coinbreakr" \
+            -var "source_image_family=ubuntu-2404-lts-amd64" \
+            -var "source_image_project_id=ubuntu-os-cloud" \
+            -var "image_name=$IMAGE_NAME" \
+            -var "image_family=$IMAGE_FAMILY" \
+            -var "zone=us-central1-a" \
+            -var "machine_type=e2-standard-2" \
+            -var "ssh_username=packer" \
+            -var "disk_size=10" \
+            -var "disk_type=pd-standard" \
+            -var "network=default" \
+            -var "subnetwork=default" \
+            packer.pkr.hcl
 
       - name: ✅ Verify Image Build
         run: |
