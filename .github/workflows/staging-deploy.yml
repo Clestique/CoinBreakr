@@ -106,34 +106,4 @@ jobs:
           echo "🎉 Deployment completed!"
           echo "Instance Name: $INSTANCE_NAME"
           echo "External IP: $EXTERNAL_IP"
-          echo "Application URL: http://$EXTERNAL_IP:3000"
-          
-          # Set outputs for other steps
-          echo "instance_name=$INSTANCE_NAME" >> $GITHUB_OUTPUT
-          echo "external_ip=$EXTERNAL_IP" >> $GITHUB_OUTPUT
-
-      - name: 🔍 Verify Deployment
-        run: |
-          echo "🔍 Verifying deployment..."
-          if [ -n "${{ steps.get-instance.outputs.external_ip }}" ] && [ "${{ steps.get-instance.outputs.external_ip }}" != "Not available" ]; then
-            echo "✅ Instance is running with IP: ${{ steps.get-instance.outputs.external_ip }}"
-            echo "🌐 Application should be available at: http://${{ steps.get-instance.outputs.external_ip }}:3000"
-          else
-            echo "⚠️ Could not retrieve external IP, but deployment completed"
-          fi
-
-      - name: 📝 Create Deployment Summary
-        run: |
-          echo "## 🚀 Staging Deployment Summary" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Status:** ✅ Successfully deployed to staging" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Instance Details:**" >> $GITHUB_STEP_SUMMARY
-          echo "- **Instance Name:** ${{ steps.get-instance.outputs.instance_name }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **External IP:** ${{ steps.get-instance.outputs.external_ip }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Application URL:** http://${{ steps.get-instance.outputs.external_ip }}:3000" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Next Steps:**" >> $GITHUB_STEP_SUMMARY
-          echo "1. Test the application at the provided URL" >> $GITHUB_STEP_SUMMARY
-          echo "2. Monitor logs and performance" >> $GITHUB_STEP_SUMMARY
-          echo "3. Promote to production if tests pass" >> $GITHUB_STEP_SUMMARY
+          echo "Application URL: http://$EXTERNAL_IP:3000/v1/healthz"
