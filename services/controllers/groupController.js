@@ -1,19 +1,9 @@
 const Group = require('../models/Group');
 const User = require('../models/User');
-const { validationResult } = require('express-validator');
 
 // Create a new group
 const createGroup = async (req, res) => {
   try {
-    // Check for validation errors
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({
-        success: false,
-        message: 'Validation failed',
-        errors: errors.array()
-      });
-    }
 
     const { name, description, members } = req.body;
     const userId = req.userId;
@@ -142,15 +132,6 @@ const getGroup = async (req, res) => {
 // Update a group
 const updateGroup = async (req, res) => {
   try {
-    // Check for validation errors
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({
-        success: false,
-        message: 'Validation failed',
-        errors: errors.array()
-      });
-    }
 
     const groupId = req.params.id;
     const userId = req.userId;
@@ -244,15 +225,6 @@ const deleteGroup = async (req, res) => {
 // Add member to group
 const addMember = async (req, res) => {
   try {
-    // Check for validation errors
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({
-        success: false,
-        message: 'Validation failed',
-        errors: errors.array()
-      });
-    }
 
     const groupId = req.params.id;
     const userId = req.userId;

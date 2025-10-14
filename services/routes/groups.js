@@ -1,5 +1,5 @@
 const express = require('express');
-const { body } = require('express-validator');
+const Joi = require('joi');
 const {
   createGroup,
   getGroups,
@@ -14,51 +14,60 @@ const { authenticateToken } = require('../middleware/auth');
 
 const router = express.Router();
 
-// Validation rules for creating a group
-const createGroupValidation = [
-  body('name')
-    .trim()
-    .notEmpty()
-    .withMessage('Group name is required')
-    .isLength({ max: 100 })
-    .withMessage('Group name cannot be more than 100 characters'),
-  body('description')
-    .optional()
-    .trim()
-    .isLength({ max: 500 })
-    .withMessage('Description cannot be more than 500 characters')
-];
+// Validation schemas using Joi
+const createGroupSchema = Joi.object({
+  name: Joi.string().trim().min(1).max(100).required().messages({
+    'string.empty': 'Group name is required',
+    'string.min': 'Group name cannot be empty',
+    'string.max': 'Group name cannot be more than 100 characters'
+  }),
+  description: Joi.string().trim().max(500).optional().messages({
+    'string.max': 'Description cannot be more than 500 characters'
+  }),
+  members: Joi.array().items(Joi.string()).optional()
+});
 
-// Validation rules for updating a group
-const updateGroupValidation = [
-  body('name')
-    .optional()
-    .trim()
-    .notEmpty()
-    .withMessage('Group name cannot be empty')
-    .isLength({ max: 100 })
-    .withMessage('Group name cannot be more than 100 characters'),
-  body('description')
-    .optional()
-    .trim()
-    .isLength({ max: 500 })
-    .withMessage('Description cannot be more than 500 characters')
-];
+const updateGroupSchema = Joi.object({
+  name: Joi.string().trim().min(1).max(100).optional().messages({
+    'string.empty': 'Group name cannot be empty',
+    'string.min': 'Group name cannot be empty',
+    'string.max': 'Group name cannot be more than 100 characters'
+  }),
+  description: Joi.string().trim().max(500).optional().messages({
+    'string.max': 'Description cannot be more than 500 characters'
+  })
+});
 
-// Validation rules for adding a member to a group
-const addMemberValidation = [
-  body('memberEmail')
-    .isEmail()
-    .withMessage('Please provide a valid email address')
-    .normalizeEmail(),
-  body('role')
-    .optional()
-    .isIn(['member', 'admin'])
-    .withMessage('Role must be either member or admin')
-];
+const addMemberSchema = Joi.object({
+  memberEmail: Joi.string().email().required().messages({
+    'string.email': 'Please provide a valid email address'
+  }),
+  role: Joi.string().valid('member', 'admin').optional().default('member').messages({
+    'any.only': 'Role must be either member or admin'
+  })
+});
+
+// Middleware function to validate request body
+const validateBody = (schema) => {
+  return (req, res, next) => {
+    const { error, value } = schema.validate(req.body, { abortEarly: false });
+    if (error) {
+      return res.status(400).json({
+        success: false,
+        message: 'Validation failed',
+        errors: error.details.map(detail => ({
+          field: detail.path.join('.'),
+          message: detail.message
+        }))
+      });
+    }
+    req.body = value; // Use the validated and sanitized data
+    next();
+  };
+};
 
 // Create a new group
-router.post('/', authenticateToken, createGroupValidation, createGroup);
+router.post('/', authenticateToken, validateBody(createGroupSchema), createGroup);
 
 // Get all groups for the authenticated user
 router.get('/', authenticateToken, getGroups);
@@ -67,13 +76,13 @@ router.get('/', authenticateToken, getGroups);
 router.get('/:id', authenticateToken, getGroup);
 
 // Update a group
-router.put('/:id', authenticateToken, updateGroupValidation, updateGroup);
+router.put('/:id', authenticateToken, validateBody(updateGroupSchema), updateGroup);
 
 // Delete a group (only creator can delete)
 router.delete('/:id', authenticateToken, deleteGroup);
 
 // Add a member to the group
-router.post('/:id/members', authenticateToken, addMemberValidation, addMember);
+router.post('/:id/members', authenticateToken, validateBody(addMemberSchema), addMember);
 
 // Remove a member from the group
 router.delete('/:id/members/:memberId', authenticateToken, removeMember);
