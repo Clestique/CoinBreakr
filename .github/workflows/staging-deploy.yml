@@ -23,8 +23,8 @@ jobs:
       - name: ☁️ Authenticate to Google Cloud (Workload Identity)
         uses: google-github-actions/auth@v1
         with:
-          workload_identity_provider: projects/379416821819/locations/global/workloadIdentityPools/github-pool/providers/github-provider
-          service_account: packer-github@coinbreakr.iam.gserviceaccount.com
+          workload_identity_provider: ${{ secrets.WIF }}
+          service_account: ${{ secrets.IAM }}
 
       - name: 🛠️ Set up Google Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
