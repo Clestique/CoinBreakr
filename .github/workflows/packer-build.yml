@@ -44,13 +44,23 @@ jobs:
         run: |
           echo "📦 Creating services.zip from services directory..."
           mkdir -p dist
-          cd services
-          zip -r ../dist/services.zip . -x "*/node_modules/*" -x "*/.git/*" -x "*/.cache/*" --include ".*"
-          cd ..
+          if [ -d "services" ]; then
+            cd services
+            shopt -s dotglob
+            zip -r ../dist/services.zip . -x "*/node_modules/*" "*/.git/*"
+            shopt -u dotglob
+            cd ..
+          else
+            echo "❌ Error: 'services' directory not found!"
+            exit 1
+          fi
+
           if [ -f dist/services.zip ]; then
             echo "✅ services.zip created successfully"
             ls -la dist/services.zip
             echo "📊 Zip file size: $(du -h dist/services.zip | cut -f1)"
+            echo "📂 Contents:"
+            unzip -l dist/services.zip | head -n 20
           else
             echo "❌ Error: Failed to create services.zip"
             exit 1
