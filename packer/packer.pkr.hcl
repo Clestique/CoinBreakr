@@ -82,7 +82,7 @@ variable "subnetwork" {
 source "googlecompute" "ubuntu" {
   project_id              = var.project_id
   source_image_family     = var.source_image_family
-  source_image_project_id = var.source_image_project_id
+  source_image_project_id = ["var.source_image_project_id"]
   image_name              = var.image_name
   image_family            = var.image_family
   zone                    = var.zone
