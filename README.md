@@ -1,1 +1,1 @@
-##CoinBreakr Server automatesd
+##CoinBreakr Server
