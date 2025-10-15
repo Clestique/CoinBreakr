@@ -21,8 +21,8 @@ jobs:
       - name: ☁️ Authenticate to Google Cloud (Workload Identity)
         uses: google-github-actions/auth@v1
         with:
-          workload_identity_provider: projects/379416821819/locations/global/workloadIdentityPools/github-pool/providers/github-provider
-          service_account: packer-github@coinbreakr.iam.gserviceaccount.com
+          workload_identity_provider: ${{ secrets.WIF }}
+          service_account: ${{ secrets.IAM }}
 
       - name: 🛠️ Set up Google Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
@@ -59,7 +59,7 @@ jobs:
 
       - name: ✅ Validate Template
         working-directory: ./packer
-        run: packer validate -var "project_id=coinbreakr" -var "source_image_family=ubuntu-2404-lts-amd64" -var "source_image_project_id=ubuntu-os-cloud" -var "image_name=$IMAGE_NAME" -var "image_family=$IMAGE_FAMILY" -var "zone=us-central1-a" -var "machine_type=e2-standard-2" -var "ssh_username=packer" -var "disk_size=10" -var "disk_type=pd-standard" -var "network=default" -var "subnetwork=default" packer.pkr.hcl  
+        run: packer validate -var "project_id=${{ vars.GCP_PROJECT_ID }}" -var "source_image_family=${{ vars.SOURCE_IMAGE_FAMILY }}" -var "source_image_project_id=${{ vars.SOURCE_IMAGE_PROJECT_ID}}" -var "image_name=${{ vars.IMAGE_NAME_VALIDATE }}" -var "image_family=${{ vars.IMAGE_FAMILY_VALIDATE }}" -var "zone=${{ vars.ZONE }}" -var "machine_type=${{ vars.MACHINE_TYPE_PACKER }}" -var "ssh_username=${{ vars.USERNAME_PACKER }}" -var "disk_size=${{ vars.DISK_SIZE }}" -var "disk_type=${{ vars.DISK_TYPE }}" -var "network=${{ vars.NETWORK }}" -var "subnetwork=${{ vars.SUBNETWORK }}" packer.pkr.hcl  
 
       - name: 🏗️ Build Custom Image
         working-directory: ./packer
@@ -73,7 +73,7 @@ jobs:
             IMAGE_FAMILY="coinbreakr-staging-family"
           fi
           echo "🏗️ Building image: $IMAGE_NAME (family: $IMAGE_FAMILY)"
-          packer build -var "project_id=coinbreakr" -var "source_image_family=ubuntu-2404-lts-amd64" -var "source_image_project_id=ubuntu-os-cloud" -var "image_name=$IMAGE_NAME" -var "image_family=$IMAGE_FAMILY" -var "zone=us-central1-a" -var "machine_type=e2-standard-2" -var "ssh_username=packer" -var "disk_size=10" -var "disk_type=pd-standard" -var "network=default" -var "subnetwork=default" packer.pkr.hcl
+          packer build -var "project_id=${{ vars.GCP_PROJECT_ID }}" -var "source_image_family=${{ vars.SOURCE_IMAGE_FAMILY }}" -var "source_image_project_id=${{ vars.SOURCE_IMAGE_PROJECT_ID}}" -var "image_name=$IMAGE_NAME" -var "image_family=$IMAGE_FAMILY" -var "zone=${{ vars.ZONE }}" -var "machine_type=${{ vars.MACHINE_TYPE_PACKER }}" -var "ssh_username=${{ vars.USERNAME_PACKER }}" -var "disk_size=${{ vars.DISK_SIZE }}" -var "disk_type=${{ vars.DISK_TYPE }}" -var "network=${{ vars.NETWORK }}" -var "subnetwork=${{ vars.SUBNETWORK }}" packer.pkr.hcl
 
       - name: ✅ Verify Image Build
         run: |
