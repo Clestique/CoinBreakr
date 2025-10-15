@@ -101,13 +101,4 @@ build {
       "cd /tmp/services && sudo chmod +x scripts/setup.sh && sudo scripts/setup.sh"
     ]
   }
-
-  # Harden builder/provisioning users: prevent interactive logins on the final image
-  provisioner "shell" {
-    inline = [
-      "set -euxo pipefail",
-      # Lock packer user if it exists
-      "if id -u packer >/dev/null 2>&1; then sudo passwd -l packer; echo '✅ packer user locked with no-login shell'; fi"
-    ]
-  }
 }
