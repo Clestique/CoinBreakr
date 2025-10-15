@@ -1,35 +1,14 @@
 # VPC Network
-resource "google_compute_network" "vpc_network" {
-  name                    = "coinbreakr-network"
-  auto_create_subnetworks = true
+data "google_compute_network" "vpc_network" {
+  name = "coinbreakr-network"
 }
 
-# Allow SSH
-resource "google_compute_firewall" "allow_ssh" {
-  name    = "allow-ssh"
-  network = google_compute_network.vpc_network.name
-
-  allow {
-    protocol = "tcp"
-    ports    = ["22"]
-  }
-
-  source_ranges = ["0.0.0.0/0"]
-  target_tags   = ["coinbreakr-network"]
+data "google_compute_firewall" "allow_ssh" {
+  name = "allow-ssh"
 }
 
-# Allow Node app on port 3000
-resource "google_compute_firewall" "allow_node_app" {
-  name    = "allow-node-app"
-  network = google_compute_network.vpc_network.name # Fixed to use existing VPC
-
-  allow {
-    protocol = "tcp"
-    ports    = ["3000"]
-  }
-
-  source_ranges = ["0.0.0.0/0"]
-  target_tags   = ["coinbreakr-network"] # Must match the VM tag
+data "google_compute_firewall" "allow_node_app" {
+  name = "allow-node-app"
 }
 
 # Get the latest Coinbreakr image
@@ -53,7 +32,7 @@ resource "google_compute_instance" "vm_instance" {
   }
 
   network_interface {
-    network = google_compute_network.vpc_network.id
+    network = data.google_compute_network.vpc_network.id
     access_config {}
   }
 
