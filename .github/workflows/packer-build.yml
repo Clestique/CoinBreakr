@@ -46,9 +46,7 @@ jobs:
           mkdir -p dist
           if [ -d "services" ]; then
             cd services
-            shopt -s dotglob
             zip -r ../dist/services.zip . -x "*/node_modules/*" "*/.git/*"
-            shopt -u dotglob
             cd ..
           else
             echo "❌ Error: 'services' directory not found!"
@@ -60,7 +58,7 @@ jobs:
             ls -la dist/services.zip
             echo "📊 Zip file size: $(du -h dist/services.zip | cut -f1)"
             echo "📂 Contents:"
-            unzip -l dist/services.zip | head -n 20
+            unzip -l dist/services.zip
           else
             echo "❌ Error: Failed to create services.zip"
             exit 1
