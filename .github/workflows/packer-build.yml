@@ -45,7 +45,7 @@ jobs:
           echo "📦 Creating services.zip from services directory..."
           mkdir -p dist
           cd services
-          zip -r ../dist/services.zip . -x "node_modules/*"
+          zip -r ../dist/services.zip . -x "*/node_modules/*" -x "*/.git/*" -x "*/.cache/*" --include ".*"
           cd ..
           if [ -f dist/services.zip ]; then
             echo "✅ services.zip created successfully"

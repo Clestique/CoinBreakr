@@ -7,7 +7,6 @@ Wants=network-online.target
 [Service]
 Type=simple
 WorkingDirectory=/opt/coinbreakr
-EnvironmentFile=/opt/coinbreakr/.env
 ExecStartPre=/bin/bash -c 'until docker info >/dev/null 2>&1; do echo "Waiting for Docker daemon..."; sleep 2; done'
 ExecStart=/usr/local/bin/docker-compose -f /opt/coinbreakr/docker-compose.yml up --build
 ExecStop=/usr/local/bin/docker-compose -f /opt/coinbreakr/docker-compose.yml down
