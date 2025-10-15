@@ -45,7 +45,7 @@ jobs:
           echo "📦 Creating services.zip from services directory..."
           mkdir -p dist
           cd services
-          zip -r ../dist/services.zip . -x "node_modules/*" "*.md" "*.log" ".git/*"
+          zip -r ../dist/services.zip . -x "node_modules/*"
           cd ..
           if [ -f dist/services.zip ]; then
             echo "✅ services.zip created successfully"
@@ -62,7 +62,7 @@ jobs:
 
       - name: ✅ Validate Template
         working-directory: ./packer
-        run: packer validate packer.pkr.hcl
+        run: packer validate -var "project_id=coinbreakr" -var "source_image_family=ubuntu-2404-lts-amd64" -var "source_image_project_id=ubuntu-os-cloud" -var "image_name=$IMAGE_NAME" -var "image_family=$IMAGE_FAMILY" -var "zone=us-central1-a" -var "machine_type=e2-standard-2" -var "ssh_username=packer" -var "disk_size=10" -var "disk_type=pd-standard" -var "network=default" -var "subnetwork=default" packer.pkr.hcl  
 
       - name: 🏗️ Build Custom Image
         working-directory: ./packer
