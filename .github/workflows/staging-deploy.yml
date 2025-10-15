@@ -74,7 +74,7 @@ jobs:
           COMMIT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)  # Short SHA
           INSTANCE_NAME="coinbreakr-$COMMIT_SHA"
 
-          terraform apply -auto-approve -var="project_id=coinbreakr" -var="region=us-central1" -var="zone=us-central1-a" -var="instance_name=$INSTANCE_NAME" -var="image_family=coinbreakr-staging-family" -var="machine_type=e2-small" -var="ssh_user=terraform" -var="ssh_public_key_path=/dev/null"
+          terraform apply -auto-approve -var="project_id=${{ vars.GCP_PROJECT_ID }}" -var="zone=${{ vars.ZONE }}" -var="instance_name=$INSTANCE_NAME" -var="image_family=coinbreakr-staging-family" -var="machine_type=${{ vars.MACHINE_TYPE_TERRAFORM }}" -var="ssh_user=${{ vars.USERNAME_TERRAFORM }}" -var="ssh_public_key_path=/dev/null"
 
       - name: 📊 Get Instance Information
         working-directory: ./terraform
