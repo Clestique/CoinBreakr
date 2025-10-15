@@ -18,7 +18,6 @@ APP_NAME="coinbreakr"
 APP_DIR="/opt/${APP_NAME}"
 APP_USER="vaisu.bhut"
 APP_GROUP="${APP_NAME}"
-COMPOSE_FILE="docker-compose.yml"
 
 # -----------------------------------------------------------------------------
 # 0. Ensure root privileges

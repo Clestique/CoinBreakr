@@ -53,17 +53,6 @@ jobs:
             exit 1
           fi
 
-          if [ -f dist/services.zip ]; then
-            echo "✅ services.zip created successfully"
-            ls -la dist/services.zip
-            echo "📊 Zip file size: $(du -h dist/services.zip | cut -f1)"
-            echo "📂 Contents:"
-            unzip -l dist/services.zip
-          else
-            echo "❌ Error: Failed to create services.zip"
-            exit 1
-          fi
-
       - name: 🧠 Initialize Packer
         working-directory: ./packer
         run: packer init .
