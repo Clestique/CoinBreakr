@@ -12,6 +12,8 @@ services:
       - MONGO_URL=${MONGO_URL}
       - JWT_SECRET=${JWT_SECRET}
       - JWT_EXPIRES_IN=${JWT_EXPIRES_IN}
+      - NODE_ENV=${NODE_ENV:-production}
+      - PORT=${PORT:-3000}
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3000/v1/healthz"]

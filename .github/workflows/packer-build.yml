@@ -45,11 +45,12 @@ jobs:
           echo "📦 Creating services.zip from services directory..."
           mkdir -p dist
           cd services
-          zip -r ../dist/services.zip . -x "node_modules/*" "*.md"
+          zip -r ../dist/services.zip . -x "node_modules/*" "*.md" "*.log" ".git/*"
           cd ..
           if [ -f dist/services.zip ]; then
             echo "✅ services.zip created successfully"
             ls -la dist/services.zip
+            echo "📊 Zip file size: $(du -h dist/services.zip | cut -f1)"
           else
             echo "❌ Error: Failed to create services.zip"
             exit 1

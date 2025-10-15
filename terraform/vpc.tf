@@ -33,7 +33,7 @@ resource "google_compute_firewall" "allow_node_app" {
 }
 
 # Get the latest Coinbreakr image
-data "google_compute_image" "latest_coinbreakr" {
+data "google_compute_image" "latest_coinbreakr_staging" {
   family  = var.image_family
   project = var.project_id
 }
@@ -46,7 +46,7 @@ resource "google_compute_instance" "vm_instance" {
 
   boot_disk {
     initialize_params {
-      image = data.google_compute_image.latest_coinbreakr.self_link
+      image = data.google_compute_image.latest_coinbreakr_staging.self_link
       size  = 10
       type  = "pd-balanced"
     }

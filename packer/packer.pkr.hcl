@@ -82,7 +82,7 @@ variable "subnetwork" {
 source "googlecompute" "ubuntu" {
   project_id              = var.project_id
   source_image_family     = var.source_image_family
-  source_image_project_id = [var.source_image_project_id]
+  source_image_project_id = var.source_image_project_id
   image_name              = var.image_name
   image_family            = var.image_family
   zone                    = var.zone
@@ -107,7 +107,9 @@ build {
     inline = [
       "echo '📦 Extracting services.zip...'",
       "sudo apt-get update -y && sudo apt-get install -y unzip",
+      "if [ ! -f /tmp/services.zip ]; then echo '❌ services.zip not found'; exit 1; fi",
       "sudo unzip /tmp/services.zip -d /tmp/services",
+      "if [ ! -d /tmp/services ]; then echo '❌ Failed to extract services.zip'; exit 1; fi",
       "cd /tmp/services && sudo chmod +x scripts/setup.sh && sudo scripts/setup.sh"
     ]
   }
