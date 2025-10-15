@@ -100,7 +100,19 @@ shopt -u dotglob
 
 
 # -----------------------------------------------------------------------------
-# 5. Set File Ownership and Permissions
+# 5. Create Environment File
+# -----------------------------------------------------------------------------
+echo "📝 Creating environment file template..."
+cat > "${APP_DIR}/.env" << EOF
+MONGO_URL=mongodb+srv://vaisubhut:vaisu.bhut@finset.vvwvm1u.mongodb.net/CoinBreakr?retryWrites=true&w=majority&appName=Finset
+JWT_SECRET=your-super-secret-jwt-key-here
+JWT_EXPIRES_IN=2d
+NODE_ENV=production
+PORT=3000
+EOF
+
+# -----------------------------------------------------------------------------
+# 6. Set File Ownership and Permissions
 # -----------------------------------------------------------------------------
 echo "🔐 Setting permissions for ${APP_DIR}..."
 chown -R "${APP_USER}:${APP_GROUP}" "${APP_DIR}"
@@ -108,7 +120,7 @@ chmod -R 750 "${APP_DIR}"
 
 
 # -----------------------------------------------------------------------------
-# 6. Install systemd unit and enable service
+# 7. Install systemd unit and enable service
 # -----------------------------------------------------------------------------
 SERVICE_NAME="coinbreakr"
 SERVICE_FILE_SRC="/opt/coinbreakr/scripts/${SERVICE_NAME}.service"
@@ -125,5 +137,25 @@ else
   exit 1
 fi
 
-# 🚀 Skip container start during image build
 echo "✅ Service installed and enabled. It will start automatically on instance boot."
+
+# -----------------------------------------------------------------------------
+# 8. Verify Service Configuration
+# -----------------------------------------------------------------------------
+echo "🔍 Verifying service configuration..."
+if systemctl is-enabled coinbreakr.service >/dev/null 2>&1; then
+  echo "✅ Service is enabled for auto-start"
+else
+  echo "⚠️  Service may not be enabled properly"
+fi
+
+if [ -f "${APP_DIR}/.env" ]; then
+  echo "✅ Environment file created"
+else
+  echo "❌ Environment file missing"
+  exit 1
+fi
+
+echo "🎉 Setup completed successfully!"
+echo "📋 Service will start automatically on instance boot"
+echo "🌐 Application will be available at http://localhost:3000"
