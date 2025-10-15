@@ -1,6 +1,6 @@
 # VPC Network
 resource "google_compute_network" "vpc_network" {
-  name                    = "cheap-vpc"
+  name                    = "coinbreakr-network"
   auto_create_subnetworks = true
 }
 
@@ -15,7 +15,7 @@ resource "google_compute_firewall" "allow_ssh" {
   }
 
   source_ranges = ["0.0.0.0/0"]
-  target_tags   = ["cheap-instance"]
+  target_tags   = ["coinbreakr-network"]
 }
 
 # Allow Node app on port 3000
@@ -29,7 +29,7 @@ resource "google_compute_firewall" "allow_node_app" {
   }
 
   source_ranges = ["0.0.0.0/0"]
-  target_tags   = ["cheap-instance"] # Must match the VM tag
+  target_tags   = ["coinbreakr-network"] # Must match the VM tag
 }
 
 # Get the latest Coinbreakr image
@@ -54,10 +54,10 @@ resource "google_compute_instance" "vm_instance" {
 
   network_interface {
     network = google_compute_network.vpc_network.id
-    access_config {} # External IP
+    access_config {}
   }
 
-  tags = ["cheap-instance"]
+  tags = ["coinbreakr-network"]
 }
 
 # Outputs
