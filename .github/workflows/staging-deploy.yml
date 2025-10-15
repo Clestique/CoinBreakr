@@ -67,41 +67,21 @@ jobs:
           echo "✅ Validating Terraform configuration..."
           terraform validate
 
-      - name: 📋 Plan Terraform Deployment
-        working-directory: ./terraform
-        run: |
-          echo "📋 Planning Terraform deployment..."
-          terraform plan \
-            -var="project_id=coinbreakr" \
-            -var="region=us-central1" \
-            -var="zone=us-central1-a" \
-            -var="instance_name=coinbreakr-staging-$(date +%Y%m%d-%H%M%S)" \
-            -var="image_family=coinbreakr-staging-family" \
-            -var="machine_type=e2-small" \
-            -var="ssh_user=terraform" \
-            -var="ssh_public_key_path=/dev/null" \
-            -out=tfplan
-
       - name: 🚀 Apply Terraform Deployment
         working-directory: ./terraform
         run: |
           echo "🚀 Applying Terraform deployment..."
-          terraform apply -auto-approve \
-            -var="project_id=coinbreakr" \
-            -var="region=us-central1" \
-            -var="zone=us-central1-a" \
-            -var="instance_name=coinbreakr-staging-$(date +%Y%m%d-%H%M%S)" \
-            -var="image_family=coinbreakr-staging-family" \
-            -var="machine_type=e2-small" \
-            -var="ssh_user=terraform" \
-            -var="ssh_public_key_path=/dev/null"
+          COMMIT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)  # Short SHA
+          INSTANCE_NAME="coinbreakr-$COMMIT_SHA"
+
+          terraform apply -auto-approve -var="project_id=coinbreakr" -var="region=us-central1" -var="zone=us-central1-a" -var="instance_name=$INSTANCE_NAME" -var="image_family=coinbreakr-staging-family" -var="machine_type=e2-small" -var="ssh_user=terraform" -var="ssh_public_key_path=/dev/null"
 
       - name: 📊 Get Instance Information
         working-directory: ./terraform
         run: |
           echo "📊 Getting instance information..."
-          INSTANCE_NAME=$(terraform output -raw instance_name 2>/dev/null || echo "coinbreakr-staging-$(date +%Y%m%d-%H%M%S)")
-          EXTERNAL_IP=$(gcloud compute instances describe $INSTANCE_NAME --zone=us-central1-a --format="value(networkInterfaces[0].accessConfigs[0].natIP)" 2>/dev/null || echo "Not available")
+          INSTANCE_NAME=$(terraform output -raw instance_name 2>/dev/null)
+          EXTERNAL_IP=$(terraform output -raw instance_external_ip 2>/dev/null)
           
           echo "🎉 Deployment completed!"
           echo "Instance Name: $INSTANCE_NAME"

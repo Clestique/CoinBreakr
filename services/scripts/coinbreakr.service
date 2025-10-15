@@ -1,26 +1,23 @@
 [Unit]
 Description=CoinBreakr Docker Compose Service
-After=docker.service network-online.target
+After=network-online.target docker.service
 Requires=docker.service
 Wants=network-online.target
 
 [Service]
-Type=oneshot
-RemainAfterExit=yes
+Type=simple
 WorkingDirectory=/opt/coinbreakr
-EnvironmentFile=/opt/coinbreakr/.env
 ExecStartPre=/bin/bash -c 'until docker info >/dev/null 2>&1; do echo "Waiting for Docker daemon..."; sleep 2; done'
-ExecStartPre=/bin/sleep 15
-ExecStart=/usr/local/bin/docker-compose -f /opt/coinbreakr/docker-compose.yml up -d --remove-orphans
-ExecStartPost=/bin/bash -c 'sleep 30 && /usr/local/bin/docker-compose -f /opt/coinbreakr/docker-compose.yml ps'
+ExecStart=/usr/local/bin/docker-compose -f /opt/coinbreakr/docker-compose.yml up --build
 ExecStop=/usr/local/bin/docker-compose -f /opt/coinbreakr/docker-compose.yml down
-User=root
-Group=root
+Restart=always
+RestartSec=10s
 TimeoutStartSec=600
 TimeoutStopSec=120
+User=root
+Group=root
 StandardOutput=journal
 StandardError=journal
-Restart=no  # (not needed for oneshot)
 
 [Install]
 WantedBy=multi-user.target
