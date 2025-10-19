@@ -137,7 +137,7 @@ const searchUsers = async (req, res) => {
                     ]
                 }
             ]
-        }).select('name email profileImage').limit(limitNum).skip((pageNum - 1) * limitNum);
+        }).select('_id name email profileImage').limit(limitNum).skip((pageNum - 1) * limitNum);
 
         if (users.length === 0) {
             return res.status(404).json({
@@ -265,15 +265,15 @@ const addFriend = async (req, res) => {
                 // User doesn't exist, check if already in pending friends
                 let existingPending = null;
                 if (email) {
-                    existingPending = await PendingFriend.findOne({ 
-                        addedBy: req.userId, 
-                        email: email.toLowerCase() 
+                    existingPending = await PendingFriend.findOne({
+                        addedBy: req.userId,
+                        email: email.toLowerCase()
                     });
                 }
                 if (!existingPending && phoneNumber) {
-                    existingPending = await PendingFriend.findOne({ 
-                        addedBy: req.userId, 
-                        phoneNumber 
+                    existingPending = await PendingFriend.findOne({
+                        addedBy: req.userId,
+                        phoneNumber
                     });
                 }
 
