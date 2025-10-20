@@ -4,12 +4,11 @@ import { createStackNavigator } from '@react-navigation/stack';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { View, Text, StyleSheet } from 'react-native';
 
-import OnboardingScreen1 from '../screens/OnboardingScreen1';
-import OnboardingScreen2 from '../screens/OnboardingScreen2';
-import OnboardingScreen3 from '../screens/OnboardingScreen3';
-import OnboardingScreen4 from '../screens/OnboardingScreen4';
-import AuthScreen from '../screens/AuthScreen';
-import ProfileScreen from '../screens/ProfileScreen';
+import { OnboardingScreen1, OnboardingScreen2, OnboardingScreen3, OnboardingScreen4 } from '../screens/onboarding';
+import { AuthScreen } from '../screens/profile';
+import { AddFriendScreen, ReviewFriendsScreen } from '../screens/friends';
+import TabNavigator from './TabNavigator';
+import colors from '../theme/colors';
 
 const Stack = createStackNavigator();
 
@@ -71,7 +70,9 @@ const AppNavigator: React.FC = () => {
           }}
         />
         <Stack.Screen name="Auth" component={AuthScreen} />
-        <Stack.Screen name="Profile" component={ProfileScreen} />
+        <Stack.Screen name="Main" component={TabNavigator} />
+        <Stack.Screen name="AddFriend" component={AddFriendScreen} />
+        <Stack.Screen name="ReviewFriends" component={ReviewFriendsScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );
@@ -82,7 +83,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.background.body,
   },
   loadingText: {
     fontSize: 60,
@@ -91,7 +92,7 @@ const styles = StyleSheet.create({
   loadingTitle: {
     fontSize: 24,
     fontWeight: '700',
-    color: '#1A1A1A',
+    color: '#0F172A',
   },
 });
 

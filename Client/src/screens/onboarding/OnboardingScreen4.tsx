@@ -7,49 +7,36 @@ import {
   TouchableOpacity,
 } from 'react-native';
 
-interface OnboardingScreen3Props {
+interface OnboardingScreen4Props {
   navigation: any;
 }
 
-const OnboardingScreen3: React.FC<OnboardingScreen3Props> = ({ navigation }) => {
-  const steps = [
-    {
-      number: '1',
-      title: 'Create a Group',
-      description: 'Start by creating a group with your friends or family members',
-    },
-    {
-      number: '2',
-      title: 'Add Expenses',
-      description: 'Record shared expenses like dinner, groceries, or travel costs',
-    },
-    {
-      number: '3',
-      title: 'Split & Settle',
-      description: 'The app automatically calculates who owes what and helps you settle up',
-    },
-  ];
-
+const OnboardingScreen4: React.FC<OnboardingScreen4Props> = ({ navigation }) => {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
-        <Text style={styles.title}>How It Works</Text>
+        <View style={styles.iconContainer}>
+          <Text style={styles.icon}>🚀</Text>
+        </View>
+        
+        <Text style={styles.title}>Ready to Get Started?</Text>
         <Text style={styles.subtitle}>
-          Simple steps to manage your shared expenses
+          Join thousands of users who are already splitting expenses effortlessly
         </Text>
         
-        <View style={styles.stepsContainer}>
-          {steps.map((step, index) => (
-            <View key={index} style={styles.stepItem}>
-              <View style={styles.stepNumber}>
-                <Text style={styles.stepNumberText}>{step.number}</Text>
-              </View>
-              <View style={styles.stepContent}>
-                <Text style={styles.stepTitle}>{step.title}</Text>
-                <Text style={styles.stepDescription}>{step.description}</Text>
-              </View>
-            </View>
-          ))}
+        <View style={styles.benefitsContainer}>
+          <View style={styles.benefitItem}>
+            <Text style={styles.benefitIcon}>✅</Text>
+            <Text style={styles.benefitText}>Free to use forever</Text>
+          </View>
+          <View style={styles.benefitItem}>
+            <Text style={styles.benefitIcon}>✅</Text>
+            <Text style={styles.benefitText}>Secure and private</Text>
+          </View>
+          <View style={styles.benefitItem}>
+            <Text style={styles.benefitIcon}>✅</Text>
+            <Text style={styles.benefitText}>Works offline</Text>
+          </View>
         </View>
       </View>
       
@@ -57,8 +44,8 @@ const OnboardingScreen3: React.FC<OnboardingScreen3Props> = ({ navigation }) => 
         <View style={styles.pagination}>
           <View style={styles.dot} />
           <View style={styles.dot} />
-          <View style={[styles.dot, styles.activeDot]} />
           <View style={styles.dot} />
+          <View style={[styles.dot, styles.activeDot]} />
         </View>
         
         <View style={styles.buttonContainer}>
@@ -70,10 +57,10 @@ const OnboardingScreen3: React.FC<OnboardingScreen3Props> = ({ navigation }) => 
           </TouchableOpacity>
           
           <TouchableOpacity
-            style={styles.nextButton}
-            onPress={() => navigation.navigate('Onboarding4')}
+            style={styles.getStartedButton}
+            onPress={() => navigation.navigate('Auth')}
           >
-            <Text style={styles.nextButtonText}>Next</Text>
+            <Text style={styles.getStartedButtonText}>Get Started</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -90,6 +77,19 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 24,
     paddingTop: 60,
+    alignItems: 'center',
+  },
+  iconContainer: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: '#F8F9FA',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 40,
+  },
+  icon: {
+    fontSize: 60,
   },
   title: {
     fontSize: 28,
@@ -104,44 +104,26 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 40,
     lineHeight: 24,
-  },
-  stepsContainer: {
-    flex: 1,
-  },
-  stepItem: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    marginBottom: 32,
     paddingHorizontal: 16,
   },
-  stepNumber: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#059669',
-    justifyContent: 'center',
+  benefitsContainer: {
+    width: '100%',
+    paddingHorizontal: 16,
+  },
+  benefitItem: {
+    flexDirection: 'row',
     alignItems: 'center',
-    marginRight: 16,
+    marginBottom: 16,
+    paddingHorizontal: 16,
   },
-  stepNumberText: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#FFFFFF',
+  benefitIcon: {
+    fontSize: 20,
+    marginRight: 12,
   },
-  stepContent: {
-    flex: 1,
-    paddingTop: 4,
-  },
-  stepTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#1A1A1A',
-    marginBottom: 8,
-  },
-  stepDescription: {
+  benefitText: {
     fontSize: 16,
     color: '#4B5563',
-    lineHeight: 22,
+    fontWeight: '500',
   },
   footer: {
     paddingHorizontal: 24,
@@ -179,7 +161,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
-  nextButton: {
+  getStartedButton: {
     flex: 1,
     backgroundColor: '#059669',
     paddingVertical: 16,
@@ -187,11 +169,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginLeft: 12,
   },
-  nextButtonText: {
+  getStartedButtonText: {
     color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '600',
   },
 });
 
-export default OnboardingScreen3;
+export default OnboardingScreen4;

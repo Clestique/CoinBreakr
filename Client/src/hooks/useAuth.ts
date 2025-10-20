@@ -1,16 +1,16 @@
 import { useState, useEffect } from 'react';
-import { authStorage, User } from '../services/authStorage';
+import { authStorage } from '../services/authStorage';
 
 export interface AuthState {
   isAuthenticated: boolean;
-  user: User | null;
+  userId: string | null;
   isLoading: boolean;
 }
 
 export const useAuth = () => {
   const [authState, setAuthState] = useState<AuthState>({
     isAuthenticated: false,
-    user: null,
+    userId: null,
     isLoading: true,
   });
 
@@ -20,36 +20,36 @@ export const useAuth = () => {
 
   const checkAuthStatus = async () => {
     try {
-      const [isAuthenticated, user] = await Promise.all([
+      const [isAuthenticated, userId] = await Promise.all([
         authStorage.isAuthenticated(),
-        authStorage.getUser(),
+        authStorage.getUserId(),
       ]);
 
       setAuthState({
         isAuthenticated,
-        user,
+        userId,
         isLoading: false,
       });
     } catch (error) {
       console.error('Error checking auth status:', error);
       setAuthState({
         isAuthenticated: false,
-        user: null,
+        userId: null,
         isLoading: false,
       });
     }
   };
 
-  const login = async (user: User, token: string) => {
+  const login = async (userId: string, token: string) => {
     try {
       await Promise.all([
-        authStorage.setUser(user),
+        authStorage.setUserId(userId),
         authStorage.setToken(token),
       ]);
 
       setAuthState({
         isAuthenticated: true,
-        user,
+        userId,
         isLoading: false,
       });
     } catch (error) {
@@ -63,7 +63,7 @@ export const useAuth = () => {
       await authStorage.clearAuth();
       setAuthState({
         isAuthenticated: false,
-        user: null,
+        userId: null,
         isLoading: false,
       });
     } catch (error) {
