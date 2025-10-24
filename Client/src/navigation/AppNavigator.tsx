@@ -6,7 +6,8 @@ import { View, Text, StyleSheet } from 'react-native';
 
 import { OnboardingScreen1, OnboardingScreen2, OnboardingScreen3, OnboardingScreen4 } from '../screens/onboarding';
 import { AuthScreen } from '../screens/profile';
-import { AddFriendScreen, ReviewFriendsScreen } from '../screens/friends';
+import { AddFriendScreen, ReviewFriendsScreen, AddExpenseScreen, ExpenseDetailScreen } from '../screens/friends';
+import { CreateGroupScreen } from '../screens/groups';
 import TabNavigator from './TabNavigator';
 import colors from '../theme/colors';
 
@@ -73,6 +74,9 @@ const AppNavigator: React.FC = () => {
         <Stack.Screen name="Main" component={TabNavigator} />
         <Stack.Screen name="AddFriend" component={AddFriendScreen} />
         <Stack.Screen name="ReviewFriends" component={ReviewFriendsScreen} />
+        <Stack.Screen name="CreateGroup" component={CreateGroupScreen} />
+        <Stack.Screen name="AddExpense" component={AddExpenseScreen} />
+        <Stack.Screen name="ExpenseDetail" component={ExpenseDetailScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

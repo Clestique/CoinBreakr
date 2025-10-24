@@ -21,7 +21,7 @@ import { useAuth } from '../../hooks/useAuth';
 
 interface RouteParams {
     selectedFriend?: Friend;
-    selectedGroup?: Group; // For future group expense functionality
+    group?: any; // Group from navigation params
 }
 
 interface SelectedParticipant {
@@ -45,7 +45,7 @@ const AddExpenseScreen: React.FC = () => {
     const route = useRoute();
     const insets = useSafeAreaInsets();
     const { userId } = useAuth();
-    const { selectedFriend, selectedGroup } = (route.params as RouteParams) || {};
+    const { selectedFriend, group } = (route.params as RouteParams) || {};
 
     // Form state
     const [title, setTitle] = useState('');
@@ -124,8 +124,23 @@ const AddExpenseScreen: React.FC = () => {
             });
         }
 
-        // Add pre-selected friend if any
-        if (selectedFriend) {
+        // If group is selected, add all group members
+        if (group && group.members) {
+            group.members.forEach((member: any) => {
+                // Skip if it's the current user (already added above)
+                if (member.user._id !== userId) {
+                    participants.push({
+                        _id: member.user._id,
+                        name: member.user.name,
+                        email: member.user.email,
+                        profileImage: member.user.profileImage,
+                        type: 'friend',
+                    });
+                }
+            });
+        }
+        // Add pre-selected friend if any (only if no group)
+        else if (selectedFriend) {
             participants.push({
                 _id: selectedFriend._id,
                 name: selectedFriend.name,
@@ -192,8 +207,8 @@ const AddExpenseScreen: React.FC = () => {
         const isAlreadySelected = selectedParticipants.some(p => p._id === friend._id);
         if (isAlreadySelected) return;
 
-        // For groups, only allow one group (but this is friend selection)
-        if (selectedGroup) {
+        // For groups, don't allow adding individual friends
+        if (group) {
             Alert.alert('Group Selected', 'You cannot add individual friends when a group is selected.');
             return;
         }
@@ -215,6 +230,12 @@ const AddExpenseScreen: React.FC = () => {
         // Don't allow removing current user
         if (participantId === userId) {
             Alert.alert('Cannot Remove', 'You cannot remove yourself from the expense.');
+            return;
+        }
+
+        // Don't allow removing participants when in group mode
+        if (group) {
+            Alert.alert('Group Expense', 'You cannot remove group members from a group expense.');
             return;
         }
 
@@ -307,7 +328,10 @@ const AddExpenseScreen: React.FC = () => {
                 expenseData.notes = description.trim(); // Some backends expect 'notes' for additional description
             }
 
-
+            // Add groupId if this is a group expense
+            if (group && group._id) {
+                expenseData.groupId = group._id;
+            }
 
             await expensesService.createExpense(expenseData);
 
@@ -377,7 +401,7 @@ const AddExpenseScreen: React.FC = () => {
                 {/* Participants Section */}
                 <View style={styles.section}>
                     <Text style={styles.sectionTitle}>
-                        With you and {selectedParticipants.filter(p => p.type === 'friend').map(p => p.name).join(', ') || 'others'}
+                        {group ? `Group: ${group.name}` : `With you and ${selectedParticipants.filter(p => p.type === 'friend').map(p => p.name).join(', ') || 'others'}`}
                     </Text>
 
                     {/* Selected Participants - Only show friends, not current user */}
@@ -391,17 +415,20 @@ const AddExpenseScreen: React.FC = () => {
                                         style={styles.participantAvatar}
                                     />
                                     <Text style={styles.participantName}>{participant.name}</Text>
-                                    <TouchableOpacity
-                                        onPress={() => removeParticipant(participant._id)}
-                                        style={styles.removeButton}
-                                    >
-                                        <Ionicons name="close" size={16} color={colors.text.tertiary} />
-                                    </TouchableOpacity>
+                                    {/* Only show remove button if not in group mode */}
+                                    {!group && (
+                                        <TouchableOpacity
+                                            onPress={() => removeParticipant(participant._id)}
+                                            style={styles.removeButton}
+                                        >
+                                            <Ionicons name="close" size={16} color={colors.text.tertiary} />
+                                        </TouchableOpacity>
+                                    )}
                                 </View>
                             ))}
 
-                        {/* Add Friend Button - Just a + button */}
-                        {!selectedGroup && (
+                        {/* Add Friend Button - Only show if not in group mode */}
+                        {!group && (
                             <TouchableOpacity
                                 style={styles.addButton}
                                 onPress={() => setShowFriendSearch(true)}
@@ -411,8 +438,8 @@ const AddExpenseScreen: React.FC = () => {
                         )}
                     </View>
 
-                    {/* Friend Search Modal */}
-                    {showFriendSearch && (
+                    {/* Friend Search Modal - Only show if not in group mode */}
+                    {showFriendSearch && !group && (
                         <View style={styles.searchContainer}>
                             <View style={styles.searchHeader}>
                                 <TextInput

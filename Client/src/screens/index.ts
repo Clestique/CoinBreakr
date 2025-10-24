@@ -1,6 +1,3 @@
-// Home screens
-export * from './home';
-
 // Groups screens  
 export * from './groups';
 

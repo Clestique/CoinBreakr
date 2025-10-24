@@ -28,6 +28,7 @@ export interface Expense {
     paidBy: ExpenseUser;
     splitWith: SplitWith[];
     isSettled: boolean;
+    groupId?: string; // Group ID if this is a group expense
 }
 
 export interface ExpensesResponse {
@@ -130,6 +131,7 @@ class ExpensesService {
         paidBy?: string;
         splitWith: Array<{ user: string; amount: number }>;
         notes?: string;
+        groupId?: string; // Optional group ID for group expenses
     }): Promise<Expense> {
         return this.makeAuthedRequest<Expense>('/expenses', {
             method: 'POST',
@@ -153,6 +155,20 @@ class ExpensesService {
     async settleExpense(id: string): Promise<Expense> {
         return this.makeAuthedRequest<Expense>(`/expenses/${id}/settle`, {
             method: 'PATCH',
+        });
+    }
+
+    async getGroupExpenses(groupId: string, filters: ExpenseFilters = {}): Promise<ExpensesResponse> {
+        const params = new URLSearchParams();
+
+        if (filters.page) params.append('page', filters.page.toString());
+        if (filters.limit) params.append('limit', filters.limit.toString());
+        if (filters.settled !== undefined) params.append('settled', filters.settled.toString());
+
+        const queryString = params.toString();
+        const endpoint = `/expenses/group/${groupId}${queryString ? `?${queryString}` : ''}`;
+        return this.makeAuthedRequest<ExpensesResponse>(endpoint, {
+            method: 'GET',
         });
     }
 }

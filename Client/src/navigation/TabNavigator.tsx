@@ -3,10 +3,9 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import colors from '../theme/colors';
 
-import { HomeScreen } from '../screens/home';
-import { GroupsScreen } from '../screens/groups';
 import { ProfileScreen } from '../screens/profile';
 import FriendsStackNavigator from './FriendsStackNavigator';
+import GroupsStackNavigator from './GroupsStackNavigator';
 
 const Tab = createBottomTabNavigator();
 
@@ -14,9 +13,6 @@ const getTabBarIcon = (routeName: string, focused: boolean, color: string, size:
   let iconName: keyof typeof Ionicons.glyphMap;
 
   switch (routeName) {
-    case 'Home':
-      iconName = focused ? 'home' : 'home-outline';
-      break;
     case 'Groups':
       iconName = focused ? 'people' : 'people-outline';
       break;
@@ -63,8 +59,7 @@ const TabNavigator: React.FC = () => {
         tabBarInactiveTintColor: colors.text.tertiary,
       })}
     >
-      <Tab.Screen name="Home" component={HomeScreen} />
-      <Tab.Screen name="Groups" component={GroupsScreen} />
+      <Tab.Screen name="Groups" component={GroupsStackNavigator} />
       <Tab.Screen name="Friends" component={FriendsStackNavigator} />
       <Tab.Screen name="Profile" component={ProfileScreen} />
     </Tab.Navigator>
