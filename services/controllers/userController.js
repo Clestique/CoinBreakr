@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 const User = require('../models/User');
+const PendingFriend = require('../models/PendingFriend');
 const Expense = require('../models/Expense');
-const bcrypt = require('bcryptjs');
 
 // Auth & User Profile
 const getUserProfile = async (req, res) => {
@@ -39,15 +39,15 @@ const updateUserProfile = async (req, res) => {
 
         // Update the user profile
         name && await User.findByIdAndUpdate(req.userId, { name }, { new: true, updatedAt: new Date() });
-        phoneNumber && await User.findByIdAndUpdate(req.userId, { phoneNumber }, { new: true, updatedAt: new Date() });       
+        phoneNumber && await User.findByIdAndUpdate(req.userId, { phoneNumber }, { new: true, updatedAt: new Date() });
         profileImage && await User.findByIdAndUpdate(req.userId, { profileImage }, { new: true, updatedAt: new Date() });
 
         return res.status(200).json({
             success: true,
             message: 'User profile updated successfully'
         });
-        } catch (error) {
-            res.status(500).json({
+    } catch (error) {
+        res.status(500).json({
             success: false,
             message: 'Server error',
             error: error.message
@@ -137,7 +137,7 @@ const searchUsers = async (req, res) => {
                     ]
                 }
             ]
-        }).select('name email profileImage').limit(limitNum).skip((pageNum - 1) * limitNum);
+        }).select('_id name email profileImage').limit(limitNum).skip((pageNum - 1) * limitNum);
 
         if (users.length === 0) {
             return res.status(404).json({
@@ -168,12 +168,16 @@ const searchUsers = async (req, res) => {
 const getFriends = async (req, res) => {
     try {
         const user = await User.findById(req.userId)
-            .populate('friends', 'name email profileImage')
-            .select('friends');
+            .populate('friends', 'name email phoneNumber profileImage')
+            .populate('pendingFriends', 'name email phoneNumber')
+            .select('friends pendingFriends');
 
         res.json({
             success: true,
-            data: user.friends
+            data: {
+                friends: user.friends,
+                pendingFriends: user.pendingFriends
+            }
         });
     } catch (error) {
         res.status(500).json({
@@ -186,64 +190,151 @@ const getFriends = async (req, res) => {
 
 const addFriend = async (req, res) => {
     try {
-        const friendId = req.body.friendId;
+        const { friends } = req.body;
 
-        if (!friendId) {
+        if (!friends || !Array.isArray(friends) || friends.length === 0) {
             return res.status(400).json({
                 success: false,
-                message: 'Friend ID is required'
+                message: 'Friends array is required and cannot be empty'
             });
         }
 
-        if (friendId.toString() === req.userId.toString()) {
-            return res.status(400).json({
-                success: false,
-                message: 'Cannot add yourself as a friend'
-            });
-        }
-
-        // Check if friend exists
-        let friend;
-        try {
-            friend = await User.findById(friendId);
-        } catch (error) {
-            if (error.name === 'CastError') {
-                return res.status(404).json({
+        // Validate friend objects
+        for (const friend of friends) {
+            if (!friend.name || (!friend.email && !friend.phoneNumber)) {
+                return res.status(400).json({
                     success: false,
-                    message: 'User not found'
+                    message: 'Each friend must have a name and either email or phone number'
                 });
             }
-            throw error;
         }
 
-        if (!friend) {
-            return res.status(404).json({
-                success: false,
-                message: 'User not found'
-            });
-        }
-
-        // Check if already friends
+        // Get current user
         const user = await User.findById(req.userId);
-        if (user.friends.includes(friendId)) {
-            return res.status(400).json({
-                success: false,
-                message: 'User is already your friend'
-            });
+        const results = [];
+        const friendsToAdd = [];
+        const pendingFriendsToAdd = [];
+
+        for (const friendData of friends) {
+            const { name, email, phoneNumber } = friendData;
+
+            // Check if user exists in the database by email or phone
+            let existingUser = null;
+            if (email) {
+                existingUser = await User.findOne({ email: email.toLowerCase() });
+            }
+            if (!existingUser && phoneNumber) {
+                existingUser = await User.findOne({ phoneNumber });
+            }
+
+            if (existingUser) {
+                // User exists in database
+                if (existingUser._id.toString() === req.userId.toString()) {
+                    results.push({
+                        name,
+                        email: email || '',
+                        phoneNumber: phoneNumber || '',
+                        success: false,
+                        message: 'Cannot add yourself as a friend'
+                    });
+                    continue;
+                }
+
+                // Check if already friends
+                if (user.friends.includes(existingUser._id)) {
+                    results.push({
+                        name,
+                        email: email || '',
+                        phoneNumber: phoneNumber || '',
+                        success: false,
+                        message: 'User is already your friend'
+                    });
+                    continue;
+                }
+
+                friendsToAdd.push(existingUser._id);
+                results.push({
+                    name,
+                    email: email || '',
+                    phoneNumber: phoneNumber || '',
+                    success: true,
+                    message: 'Friend added successfully',
+                    type: 'existing_user'
+                });
+            } else {
+                // User doesn't exist, check if already in pending friends
+                let existingPending = null;
+                if (email) {
+                    existingPending = await PendingFriend.findOne({
+                        addedBy: req.userId,
+                        email: email.toLowerCase()
+                    });
+                }
+                if (!existingPending && phoneNumber) {
+                    existingPending = await PendingFriend.findOne({
+                        addedBy: req.userId,
+                        phoneNumber
+                    });
+                }
+
+                if (existingPending) {
+                    results.push({
+                        name,
+                        email: email || '',
+                        phoneNumber: phoneNumber || '',
+                        success: false,
+                        message: 'Friend is already in your pending list'
+                    });
+                    continue;
+                }
+
+                // Create pending friend
+                const pendingFriend = new PendingFriend({
+                    name,
+                    email: email || undefined,
+                    phoneNumber: phoneNumber || undefined,
+                    addedBy: req.userId
+                });
+
+                const savedPendingFriend = await pendingFriend.save();
+                pendingFriendsToAdd.push(savedPendingFriend._id);
+
+                results.push({
+                    name,
+                    email: email || '',
+                    phoneNumber: phoneNumber || '',
+                    success: true,
+                    message: 'Friend added to pending list',
+                    type: 'pending_friend'
+                });
+            }
         }
 
-        // Add friend to both users
-        await User.findByIdAndUpdate(req.userId, {
-            $addToSet: { friends: friendId }
-        });
+        // Add existing users as friends
+        if (friendsToAdd.length > 0) {
+            await User.findByIdAndUpdate(req.userId, {
+                $addToSet: { friends: { $each: friendsToAdd } }
+            });
 
-        await User.findByIdAndUpdate(friendId, {
-            $addToSet: { friends: req.userId }
-        });
+            // Add current user to each friend's friend list
+            for (const friendId of friendsToAdd) {
+                await User.findByIdAndUpdate(friendId, {
+                    $addToSet: { friends: req.userId }
+                });
+            }
+        }
+
+        // Add pending friends to user's pending list
+        if (pendingFriendsToAdd.length > 0) {
+            await User.findByIdAndUpdate(req.userId, {
+                $addToSet: { pendingFriends: { $each: pendingFriendsToAdd } }
+            });
+        }
 
         res.status(200).json({
             success: true,
-            message: 'Friend added successfully'
+            message: `${friendsToAdd.length} friend(s) added, ${pendingFriendsToAdd.length} pending friend(s) created`,
+            data: results
         });
     } catch (error) {
         res.status(500).json({
@@ -256,7 +347,8 @@ const addFriend = async (req, res) => {
 
 const removeFriend = async (req, res) => {
     try {
-        const friendId = req.params.friendId;
+        const { friendId } = req.params;
+        const { type } = req.query; // 'friend' or 'pending'
 
         // Validate ObjectId format
         try {
@@ -268,26 +360,51 @@ const removeFriend = async (req, res) => {
             });
         }
 
-        if (friendId.toString() === req.userId.toString()) {
-            return res.status(400).json({
-                success: false,
-                message: 'Cannot remove yourself as a friend'
+        if (type === 'pending') {
+            // Remove pending friend
+            const pendingFriend = await PendingFriend.findById(friendId);
+            if (!pendingFriend || pendingFriend.addedBy.toString() !== req.userId.toString()) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'Pending friend not found'
+                });
+            }
+
+            // Remove from user's pending friends list
+            await User.findByIdAndUpdate(req.userId, {
+                $pull: { pendingFriends: friendId }
+            });
+
+            // Delete the pending friend record
+            await PendingFriend.findByIdAndDelete(friendId);
+
+            res.status(200).json({
+                success: true,
+                message: 'Pending friend removed successfully'
+            });
+        } else {
+            // Remove regular friend
+            if (friendId.toString() === req.userId.toString()) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Cannot remove yourself as a friend'
+                });
+            }
+
+            // Remove friend from both users
+            await User.findByIdAndUpdate(req.userId, {
+                $pull: { friends: friendId }
+            });
+
+            await User.findByIdAndUpdate(friendId, {
+                $pull: { friends: req.userId }
+            });
+
+            res.status(200).json({
+                success: true,
+                message: 'Friend removed successfully'
             });
         }
-
-        // Remove friend from both users
-        await User.findByIdAndUpdate(req.userId, {
-            $pull: { friends: friendId }
-        });
-
-        await User.findByIdAndUpdate(friendId, {
-            $pull: { friends: req.userId }
-        });
-
-        res.status(200).json({
-            success: true,
-            message: 'Friend removed successfully'
-        });
     } catch (error) {
         res.status(500).json({
             success: false,
@@ -366,6 +483,41 @@ const getAllBalances = async (req, res) => {
     }
 };
 
+// Helper function to convert pending friends to regular friends when user joins
+const convertPendingFriends = async (newUser) => {
+    try {
+        // Find all pending friends that match this user's email or phone
+        const matchingPendingFriends = await PendingFriend.find({
+            $or: [
+                { email: newUser.email },
+                { phoneNumber: newUser.phoneNumber }
+            ]
+        }).populate('addedBy');
+
+        for (const pendingFriend of matchingPendingFriends) {
+            const addedByUser = pendingFriend.addedBy;
+
+            // Add mutual friendship
+            await User.findByIdAndUpdate(addedByUser._id, {
+                $addToSet: { friends: newUser._id },
+                $pull: { pendingFriends: pendingFriend._id }
+            });
+
+            await User.findByIdAndUpdate(newUser._id, {
+                $addToSet: { friends: addedByUser._id }
+            });
+
+            // Delete the pending friend record
+            await PendingFriend.findByIdAndDelete(pendingFriend._id);
+        }
+
+        return matchingPendingFriends.length;
+    } catch (error) {
+        console.error('Error converting pending friends:', error);
+        return 0;
+    }
+};
+
 module.exports = {
     getUserProfile,
     searchUsers,
@@ -375,5 +527,6 @@ module.exports = {
     getBalanceWithFriend,
     getAllBalances,
     updateUserProfile,
-    changePassword
+    changePassword,
+    convertPendingFriends
 };

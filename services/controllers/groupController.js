@@ -4,25 +4,19 @@ const User = require('../models/User');
 // Create a new group
 const createGroup = async (req, res) => {
   try {
-
     const { name, description, members } = req.body;
     const userId = req.userId;
 
-    // Create group with creator as admin
-    const group = new Group({
-      name,
-      description: description || '',
-      createdBy: userId,
-      members: members || [{
-        user: userId,
-        role: 'admin',
-        joinedAt: new Date()
-      }]
-    });
+    // Initialize members array with creator as admin
+    const groupMembers = [{
+      user: userId,
+      role: 'admin',
+      joinedAt: new Date()
+    }];
 
     // Add additional members if provided
     if (members && members.length > 0) {
-      // Validate that all member IDs exist and are friends of the creator
+      // Get the current user with friends list
       const user = await User.findById(userId);
       if (!user) {
         return res.status(404).json({
@@ -31,21 +25,54 @@ const createGroup = async (req, res) => {
         });
       }
 
+      const membersToAddAsFriends = [];
+
       for (const memberId of members) {
-        // Check if the member ID is valid and is a friend of the creator
-        if (user.friends.includes(memberId)) {
-          // Check if member exists
-          const memberUser = await User.findById(memberId);
-          if (memberUser) {
-            group.members.push({
-              user: memberId,
-              role: 'member',
-              joinedAt: new Date()
-            });
+        // Skip if trying to add creator again
+        if (memberId.toString() === userId.toString()) {
+          continue;
+        }
+
+        // Check if member exists
+        const memberUser = await User.findById(memberId);
+        if (memberUser) {
+          // Add to group members
+          groupMembers.push({
+            user: memberId,
+            role: 'member',
+            joinedAt: new Date()
+          });
+
+          // If not already friends, add to list for friendship creation
+          if (!user.friends.includes(memberId)) {
+            membersToAddAsFriends.push(memberId);
           }
         }
       }
+
+      // Add non-friend members as friends
+      if (membersToAddAsFriends.length > 0) {
+        // Add to current user's friends list
+        await User.findByIdAndUpdate(userId, {
+          $addToSet: { friends: { $each: membersToAddAsFriends } }
+        });
+
+        // Add current user to each new friend's friends list
+        for (const friendId of membersToAddAsFriends) {
+          await User.findByIdAndUpdate(friendId, {
+            $addToSet: { friends: userId }
+          });
+        }
+      }
     }
+
+    // Create group with properly formatted members array
+    const group = new Group({
+      name,
+      description: description || '',
+      createdBy: userId,
+      members: groupMembers  // This is now an array of objects, not strings
+    });
 
     await group.save();
 
@@ -60,6 +87,7 @@ const createGroup = async (req, res) => {
       message: 'Group created successfully',
       data: group
     });
+
   } catch (error) {
     console.error('Create group error:', error);
     res.status(500).json({
@@ -98,7 +126,7 @@ const getGroup = async (req, res) => {
     const userId = req.userId;
 
     const group = await Group.getGroupWithMembers(groupId);
-    
+
     if (!group) {
       return res.status(404).json({
         success: false,
@@ -138,7 +166,7 @@ const updateGroup = async (req, res) => {
     const { name, description } = req.body;
 
     const group = await Group.findById(groupId);
-    
+
     if (!group) {
       return res.status(404).json({
         success: false,
@@ -188,7 +216,7 @@ const deleteGroup = async (req, res) => {
     const userId = req.userId;
 
     const group = await Group.findById(groupId);
-    
+
     if (!group) {
       return res.status(404).json({
         success: false,
@@ -231,7 +259,7 @@ const addMember = async (req, res) => {
     const { memberEmail, role = 'member' } = req.body;
 
     const group = await Group.findById(groupId);
-    
+
     if (!group) {
       return res.status(404).json({
         success: false,
@@ -261,6 +289,22 @@ const addMember = async (req, res) => {
       return res.status(400).json({
         success: false,
         message: 'User is already a member of this group'
+      });
+    }
+
+    // Get the current user to check friendship
+    const currentUser = await User.findById(userId);
+
+    // If not already friends, add as friends
+    if (!currentUser.friends.includes(userToAdd._id)) {
+      // Add to current user's friends list
+      await User.findByIdAndUpdate(userId, {
+        $addToSet: { friends: userToAdd._id }
+      });
+
+      // Add current user to new member's friends list
+      await User.findByIdAndUpdate(userToAdd._id, {
+        $addToSet: { friends: userId }
       });
     }
 
@@ -297,7 +341,7 @@ const removeMember = async (req, res) => {
     const userId = req.userId;
 
     const group = await Group.findById(groupId);
-    
+
     if (!group) {
       return res.status(404).json({
         success: false,
@@ -361,7 +405,7 @@ const leaveGroup = async (req, res) => {
     const userId = req.userId;
 
     const group = await Group.findById(groupId);
-    
+
     if (!group) {
       return res.status(404).json({
         success: false,

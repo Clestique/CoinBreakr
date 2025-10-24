@@ -1,114 +1,114 @@
-const BASE_URL = 'http://104.197.213.168:3000/v1';
+import { getApiUrl } from '../config/api';
+
+const BASE_URL = getApiUrl();
 
 export interface LoginRequest {
-  email: string;
-  password: string;
+	email: string;
+	password: string;
 }
 
 export interface RegisterRequest {
-  name: string;
-  email: string;
-  password: string;
+	name: string;
+	email: string;
+	password: string;
 }
 
-export interface AuthResponse {
-  success: boolean;
-  message: string;
-  data?: {
-    user: {
-      id: string;
-      name: string;
-      email: string;
-    };
-    token: string;
-  };
+export interface ApiErrorResponse {
+	success: false;
+	message: string;
+	errors?: Record<string, string[]>;
 }
 
-export interface ApiError {
-  success: false;
-  message: string;
-  errors?: Record<string, string[]>;
+export interface AuthData {
+	user: {
+		id: string;
+		name: string;
+		email: string;
+	};
+	token: string;
 }
+
 
 class AuthService {
-  private baseURL: string;
+	private baseURL: string;
 
-  constructor(baseURL: string) {
-    this.baseURL = baseURL;
-  }
+	constructor(baseURL: string) {
+		this.baseURL = baseURL;
+	}
 
-  private async makeRequest<T>(
-    endpoint: string,
-    options: RequestInit = {}
-  ): Promise<T> {
-    const url = `${this.baseURL}${endpoint}`;
-    
-    const defaultHeaders = {
-      'Content-Type': 'application/json',
-    };
+	private async makeRequest<T>(
+		endpoint: string,
+		options: RequestInit = {}
+	): Promise<T> {
+		const url = `${this.baseURL}${endpoint}`;
 
-    const config: RequestInit = {
-      ...options,
-      headers: {
-        ...defaultHeaders,
-        ...options.headers,
-      },
-    };
+		const defaultHeaders = {
+			'Content-Type': 'application/json',
+		};
 
-    try {
-      const response = await fetch(url, config);
+		const config: RequestInit = {
+			...options,
+			headers: {
+				...defaultHeaders,
+				...options.headers,
+			},
+		};
 
-      // Try to parse JSON; guard against empty body
-      let data: any = null;
-      try {
-        data = await response.json();
-      } catch (_) {
-        data = null;
-      }
+		try {
+			const response = await fetch(url, config);
 
-      if (!response.ok) {
-        // Normalize error shape to include field errors if provided by backend
-        const normalizedError: ApiError = {
-          success: false,
-          message:
-            (data && (data.message || data.error)) ||
-            `HTTP error! status: ${response.status}`,
-          errors: data && data.errors ? data.errors : undefined,
-        };
-        // Throw a typed error object to be handled by callers
-        throw normalizedError as unknown as Error;
-      }
+			// Try to parse JSON; guard against empty body
+			let data: any = null;
+			try {
+				data = await response.json();
+			} catch (_) {
+				data = null;
+			}
 
-      return data as T;
-    } catch (error: any) {
-      // Re-throw normalized errors from above
-      if (error && error.success === false) {
-        throw error as ApiError;
-      }
+			if (!response.ok) {
+				// Normalize error shape to include field errors if provided by backend
+				const normalizedError: ApiErrorResponse = {
+					success: false,
+					message:
+						(data && (data.message || data.error)) ||
+						`HTTP error! status: ${response.status}`,
+					errors: data && data.errors ? data.errors : undefined,
+				};
+				// Throw a typed error object to be handled by callers
+				throw normalizedError as unknown as Error;
+			}
 
-      if (error instanceof Error) {
-        // Wrap generic errors into ApiError for a consistent contract
-        const wrapped: ApiError = { success: false, message: error.message };
-        throw wrapped as unknown as Error;
-      }
-      const fallback: ApiError = { success: false, message: 'An unexpected error occurred' };
-      throw fallback as unknown as Error;
-    }
-  }
+			// Return the data directly from successful response
+			return data.success ? data.data : data;
+		} catch (error: any) {
+			// Re-throw normalized errors from above
+			if (error && error.success === false) {
+				throw error as ApiErrorResponse;
+			}
 
-  async login(credentials: LoginRequest): Promise<AuthResponse> {
-    return this.makeRequest<AuthResponse>('/auth/login', {
-      method: 'POST',
-      body: JSON.stringify(credentials),
-    });
-  }
+			if (error instanceof Error) {
+				// Wrap generic errors into ApiErrorResponse for a consistent contract
+				const wrapped: ApiErrorResponse = { success: false, message: error.message };
+				throw wrapped as unknown as Error;
+			}
+			const fallback: ApiErrorResponse = { success: false, message: 'An unexpected error occurred' };
+			throw fallback as unknown as Error;
+		}
+	}
 
-  async register(userData: RegisterRequest): Promise<AuthResponse> {
-    return this.makeRequest<AuthResponse>('/auth/register', {
-      method: 'POST',
-      body: JSON.stringify(userData),
-    });
-  }
+	async login(credentials: LoginRequest): Promise<AuthData> {
+		return this.makeRequest<AuthData>('/auth/login', {
+			method: 'POST',
+			body: JSON.stringify(credentials),
+		});
+	}
+
+	async register(userData: RegisterRequest): Promise<AuthData> {
+		return this.makeRequest<AuthData>('/auth/register', {
+			method: 'POST',
+			body: JSON.stringify(userData),
+		});
+	}
 }
 
 export const authService = new AuthService(BASE_URL);

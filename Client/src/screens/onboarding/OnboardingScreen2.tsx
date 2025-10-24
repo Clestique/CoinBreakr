@@ -7,45 +7,58 @@ import {
   TouchableOpacity,
 } from 'react-native';
 
-interface OnboardingScreen4Props {
+interface OnboardingScreen2Props {
   navigation: any;
 }
 
-const OnboardingScreen4: React.FC<OnboardingScreen4Props> = ({ navigation }) => {
+const OnboardingScreen2: React.FC<OnboardingScreen2Props> = ({ navigation }) => {
+  const features = [
+    {
+      icon: '📊',
+      title: 'Track Expenses',
+      description: 'Record shared expenses and see who owes what in real-time',
+    },
+    {
+      icon: '👥',
+      title: 'Group Management',
+      description: 'Create groups for different activities and manage multiple expense lists',
+    },
+    {
+      icon: '⚡',
+      title: 'Quick Settlements',
+      description: 'Settle debts instantly with smart payment suggestions',
+    },
+  ];
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
-        <View style={styles.iconContainer}>
-          <Text style={styles.icon}>🚀</Text>
-        </View>
-        
-        <Text style={styles.title}>Ready to Get Started?</Text>
+        <Text style={styles.title}>Powerful Features</Text>
         <Text style={styles.subtitle}>
-          Join thousands of users who are already splitting expenses effortlessly
+          Everything you need to manage shared expenses
         </Text>
         
-        <View style={styles.benefitsContainer}>
-          <View style={styles.benefitItem}>
-            <Text style={styles.benefitIcon}>✅</Text>
-            <Text style={styles.benefitText}>Free to use forever</Text>
-          </View>
-          <View style={styles.benefitItem}>
-            <Text style={styles.benefitIcon}>✅</Text>
-            <Text style={styles.benefitText}>Secure and private</Text>
-          </View>
-          <View style={styles.benefitItem}>
-            <Text style={styles.benefitIcon}>✅</Text>
-            <Text style={styles.benefitText}>Works offline</Text>
-          </View>
+        <View style={styles.featuresContainer}>
+          {features.map((feature, index) => (
+            <View key={index} style={styles.featureItem}>
+              <View style={styles.featureIcon}>
+                <Text style={styles.featureEmoji}>{feature.icon}</Text>
+              </View>
+              <View style={styles.featureContent}>
+                <Text style={styles.featureTitle}>{feature.title}</Text>
+                <Text style={styles.featureDescription}>{feature.description}</Text>
+              </View>
+            </View>
+          ))}
         </View>
       </View>
       
       <View style={styles.footer}>
         <View style={styles.pagination}>
           <View style={styles.dot} />
-          <View style={styles.dot} />
-          <View style={styles.dot} />
           <View style={[styles.dot, styles.activeDot]} />
+          <View style={styles.dot} />
+          <View style={styles.dot} />
         </View>
         
         <View style={styles.buttonContainer}>
@@ -57,10 +70,10 @@ const OnboardingScreen4: React.FC<OnboardingScreen4Props> = ({ navigation }) => 
           </TouchableOpacity>
           
           <TouchableOpacity
-            style={styles.getStartedButton}
-            onPress={() => navigation.navigate('Auth')}
+            style={styles.nextButton}
+            onPress={() => navigation.navigate('Onboarding3')}
           >
-            <Text style={styles.getStartedButtonText}>Get Started</Text>
+            <Text style={styles.nextButtonText}>Next</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -77,19 +90,6 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 24,
     paddingTop: 60,
-    alignItems: 'center',
-  },
-  iconContainer: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    backgroundColor: '#F8F9FA',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 40,
-  },
-  icon: {
-    fontSize: 60,
   },
   title: {
     fontSize: 28,
@@ -104,26 +104,42 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 40,
     lineHeight: 24,
-    paddingHorizontal: 16,
   },
-  benefitsContainer: {
-    width: '100%',
-    paddingHorizontal: 16,
+  featuresContainer: {
+    flex: 1,
   },
-  benefitItem: {
+  featureItem: {
     flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 16,
+    alignItems: 'flex-start',
+    marginBottom: 32,
     paddingHorizontal: 16,
   },
-  benefitIcon: {
-    fontSize: 20,
-    marginRight: 12,
+  featureIcon: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: '#F8F9FA',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
   },
-  benefitText: {
+  featureEmoji: {
+    fontSize: 28,
+  },
+  featureContent: {
+    flex: 1,
+    paddingTop: 8,
+  },
+  featureTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#1A1A1A',
+    marginBottom: 8,
+  },
+  featureDescription: {
     fontSize: 16,
     color: '#4B5563',
-    fontWeight: '500',
+    lineHeight: 22,
   },
   footer: {
     paddingHorizontal: 24,
@@ -161,7 +177,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
-  getStartedButton: {
+  nextButton: {
     flex: 1,
     backgroundColor: '#059669',
     paddingVertical: 16,
@@ -169,11 +185,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginLeft: 12,
   },
-  getStartedButtonText: {
+  nextButtonText: {
     color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '600',
   },
 });
 
-export default OnboardingScreen4;
+export default OnboardingScreen2;

@@ -7,46 +7,46 @@ import {
   TouchableOpacity,
 } from 'react-native';
 
-interface OnboardingScreen2Props {
+interface OnboardingScreen3Props {
   navigation: any;
 }
 
-const OnboardingScreen2: React.FC<OnboardingScreen2Props> = ({ navigation }) => {
-  const features = [
+const OnboardingScreen3: React.FC<OnboardingScreen3Props> = ({ navigation }) => {
+  const steps = [
     {
-      icon: '📊',
-      title: 'Track Expenses',
-      description: 'Record shared expenses and see who owes what in real-time',
+      number: '1',
+      title: 'Create a Group',
+      description: 'Start by creating a group with your friends or family members',
     },
     {
-      icon: '👥',
-      title: 'Group Management',
-      description: 'Create groups for different activities and manage multiple expense lists',
+      number: '2',
+      title: 'Add Expenses',
+      description: 'Record shared expenses like dinner, groceries, or travel costs',
     },
     {
-      icon: '⚡',
-      title: 'Quick Settlements',
-      description: 'Settle debts instantly with smart payment suggestions',
+      number: '3',
+      title: 'Split & Settle',
+      description: 'The app automatically calculates who owes what and helps you settle up',
     },
   ];
 
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
-        <Text style={styles.title}>Powerful Features</Text>
+        <Text style={styles.title}>How It Works</Text>
         <Text style={styles.subtitle}>
-          Everything you need to manage shared expenses
+          Simple steps to manage your shared expenses
         </Text>
         
-        <View style={styles.featuresContainer}>
-          {features.map((feature, index) => (
-            <View key={index} style={styles.featureItem}>
-              <View style={styles.featureIcon}>
-                <Text style={styles.featureEmoji}>{feature.icon}</Text>
+        <View style={styles.stepsContainer}>
+          {steps.map((step, index) => (
+            <View key={index} style={styles.stepItem}>
+              <View style={styles.stepNumber}>
+                <Text style={styles.stepNumberText}>{step.number}</Text>
               </View>
-              <View style={styles.featureContent}>
-                <Text style={styles.featureTitle}>{feature.title}</Text>
-                <Text style={styles.featureDescription}>{feature.description}</Text>
+              <View style={styles.stepContent}>
+                <Text style={styles.stepTitle}>{step.title}</Text>
+                <Text style={styles.stepDescription}>{step.description}</Text>
               </View>
             </View>
           ))}
@@ -56,8 +56,8 @@ const OnboardingScreen2: React.FC<OnboardingScreen2Props> = ({ navigation }) => 
       <View style={styles.footer}>
         <View style={styles.pagination}>
           <View style={styles.dot} />
-          <View style={[styles.dot, styles.activeDot]} />
           <View style={styles.dot} />
+          <View style={[styles.dot, styles.activeDot]} />
           <View style={styles.dot} />
         </View>
         
@@ -71,7 +71,7 @@ const OnboardingScreen2: React.FC<OnboardingScreen2Props> = ({ navigation }) => 
           
           <TouchableOpacity
             style={styles.nextButton}
-            onPress={() => navigation.navigate('Onboarding3')}
+            onPress={() => navigation.navigate('Onboarding4')}
           >
             <Text style={styles.nextButtonText}>Next</Text>
           </TouchableOpacity>
@@ -105,38 +105,40 @@ const styles = StyleSheet.create({
     marginBottom: 40,
     lineHeight: 24,
   },
-  featuresContainer: {
+  stepsContainer: {
     flex: 1,
   },
-  featureItem: {
+  stepItem: {
     flexDirection: 'row',
     alignItems: 'flex-start',
     marginBottom: 32,
     paddingHorizontal: 16,
   },
-  featureIcon: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: '#F8F9FA',
+  stepNumber: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#059669',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 16,
   },
-  featureEmoji: {
-    fontSize: 28,
+  stepNumberText: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#FFFFFF',
   },
-  featureContent: {
+  stepContent: {
     flex: 1,
-    paddingTop: 8,
+    paddingTop: 4,
   },
-  featureTitle: {
+  stepTitle: {
     fontSize: 18,
     fontWeight: '600',
     color: '#1A1A1A',
     marginBottom: 8,
   },
-  featureDescription: {
+  stepDescription: {
     fontSize: 16,
     color: '#4B5563',
     lineHeight: 22,
@@ -192,4 +194,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default OnboardingScreen2;
+export default OnboardingScreen3;

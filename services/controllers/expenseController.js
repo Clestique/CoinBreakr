@@ -165,7 +165,7 @@ const createExpense = async (req, res) => {
       date: parsedDate,
       group: groupId || null
     });
-
+    console.log('Expense:', expense);
     await expense.save();
 
     // Populate the expense with user details
@@ -414,8 +414,6 @@ const deleteExpense = async (req, res) => {
 // Settle an expense split
 const settleExpenseSplit = async (req, res) => {
   try {
-    const { userId } = req.body;
-
     const expense = await Expense.findById(req.params.id);
 
     if (!expense) {
@@ -425,64 +423,33 @@ const settleExpenseSplit = async (req, res) => {
       });
     }
 
-    // Check if user is involved in this expense (creator, payer, or split partner)
-    const isAdmin = expense.createdBy.toString() === req.userId.toString() || expense.paidBy.toString() === req.userId.toString();
+    // Check if user is involved in this expense
     const isInvolved = expense.splitWith.some(split => split.user.toString() === req.userId.toString()) && !isAdmin;
 
-    if (!isInvolved && !isAdmin) {
+    if (!isInvolved) {
       return res.status(403).json({
         success: false,
         message: 'Not authorized to settle this expense'
       });
     }
 
-    if (isAdmin && !userId) {
+    // Settle the split
+    const splitToSettle = expense.splitWith.find(split => split.user.toString() === req.userId);
+    if (!splitToSettle) {
       return res.status(400).json({
         success: false,
-        message: 'User ID is required'
+        message: 'User is not part of this expense split'
       });
     }
 
-    // Settle the split
-    let settled = false;
-    if (isAdmin) {
-      // Check if the user to settle with is in the split
-      const splitToSettle = expense.splitWith.find(split => split.user.toString() === userId);
-      if (!splitToSettle) {
-        return res.status(400).json({
-          success: false,
-          message: 'User is not part of this expense split'
-        });
-      }
-
-      // Check if already settled
-      if (splitToSettle.settled) {
-        return res.status(400).json({
-          success: false,
-          message: 'This split is already settled'
-        });
-      }
-
-      settled = expense.settleSplit(userId);
-    } else {
-      // Check if the user to settle with is in the split
-      const splitToSettle = expense.splitWith.find(split => split.user.toString() === req.userId);
-      if (!splitToSettle) {
-        return res.status(400).json({
-          success: false,
-          message: 'User is not part of this expense split'
-        });
-      }
-
-      // Check if already settled
-      if (splitToSettle.settled) {
-        return res.status(400).json({
-          success: false,
-          message: 'This split is already settled'
-        });
-      }
-      settled = expense.settleSplit(req.userId);
+    // Check if already settled
+    if (splitToSettle.settled) {
+      return res.status(400).json({
+        success: false,
+        message: 'This split is already settled'
+      });
     }
+    const settled = expense.settleSplit(req.userId);
 
     if (settled) {
       await expense.save();

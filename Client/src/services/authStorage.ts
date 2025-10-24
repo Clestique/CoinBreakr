@@ -1,13 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const TOKEN_KEY = 'auth_token';
-const USER_KEY = 'user_data';
-
-export interface User {
-  id: string;
-  name: string;
-  email: string;
-}
+const USER_ID_KEY = 'user_id';
 
 export const authStorage = {
   async setToken(token: string): Promise<void> {
@@ -36,30 +30,29 @@ export const authStorage = {
     }
   },
 
-  async setUser(user: User): Promise<void> {
+  async setUserId(userId: string): Promise<void> {
     try {
-      await AsyncStorage.setItem(USER_KEY, JSON.stringify(user));
+      await AsyncStorage.setItem(USER_ID_KEY, userId);
     } catch (error) {
-      console.error('Error saving user data:', error);
-      throw new Error('Failed to save user data');
+      console.error('Error saving user ID:', error);
+      throw new Error('Failed to save user ID');
     }
   },
 
-  async getUser(): Promise<User | null> {
+  async getUserId(): Promise<string | null> {
     try {
-      const userData = await AsyncStorage.getItem(USER_KEY);
-      return userData ? JSON.parse(userData) : null;
+      return await AsyncStorage.getItem(USER_ID_KEY);
     } catch (error) {
-      console.error('Error getting user data:', error);
+      console.error('Error getting user ID:', error);
       return null;
     }
   },
 
-  async removeUser(): Promise<void> {
+  async removeUserId(): Promise<void> {
     try {
-      await AsyncStorage.removeItem(USER_KEY);
+      await AsyncStorage.removeItem(USER_ID_KEY);
     } catch (error) {
-      console.error('Error removing user data:', error);
+      console.error('Error removing user ID:', error);
     }
   },
 
@@ -67,7 +60,7 @@ export const authStorage = {
     try {
       await Promise.all([
         this.removeToken(),
-        this.removeUser(),
+        this.removeUserId(),
       ]);
     } catch (error) {
       console.error('Error clearing auth data:', error);

@@ -1,25 +1,14 @@
 import { authStorage } from './authStorage';
-
-const BASE_URL = 'http://104.197.213.168:3000/v1';
+import { getApiUrl } from '../config/api';
+import type { ApiErrorResponse } from './auth';
 
 export interface UserProfile {
-  id: string;
+  _id: string;
   name: string;
   email: string;
+  profileImage?: string;
   phoneNumber?: string;
-  imageUrl?: string;
-}
-
-export interface ProfileResponse {
-  success: boolean;
-  message: string;
-  data?: UserProfile;
-}
-
-export interface UpdateProfileRequest {
-  name?: string;
-  phoneNumber?: string; // compatibility with alternative backend field names
-  profileImage?: string; // base64 data URI
+  createdAt?: string;
 }
 
 export interface ChangePasswordRequest {
@@ -27,17 +16,16 @@ export interface ChangePasswordRequest {
   newPassword: string;
 }
 
-export interface ApiErrorProfile {
-  success: false;
+export interface ChangePasswordResponse {
+  success: boolean;
   message: string;
-  errors?: Record<string, string[]>;
 }
 
 class ProfileService {
   private baseURL: string;
 
-  constructor(baseURL: string) {
-    this.baseURL = baseURL;
+  constructor() {
+    this.baseURL = getApiUrl();
   }
 
   private async makeAuthedRequest<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
@@ -68,51 +56,66 @@ class ProfileService {
       }
 
       if (!response.ok) {
-        const normalized: ApiErrorProfile = {
+        const normalizedError: ApiErrorResponse = {
           success: false,
-          message: (data && (data.message || data.error)) || `HTTP error! status: ${response.status}`,
-          errors: data && data.errors ? data.errors : undefined,
+          message: data?.message || `HTTP error! status: ${response.status}`,
+          errors: data?.errors
         };
-        throw normalized as unknown as Error;
+        throw normalizedError as unknown as Error;
       }
 
-      return data as T;
+      // Return the data directly from successful response
+      // Handle both wrapped ({success: true, data: ...}) and direct response formats
+      if (data && typeof data === 'object') {
+        if (data.success === true && data.data) {
+          return data.data;
+        } else if (data.success === false) {
+          // This should have been caught above, but just in case
+          const errorResponse: ApiErrorResponse = {
+            success: false,
+            message: data.message || 'Unknown error',
+            errors: data.errors
+          };
+          throw errorResponse as unknown as Error;
+        } else {
+          // Direct data response (no wrapper)
+          return data;
+        }
+      }
+      return data;
     } catch (error: any) {
-      if (error && error.success === false) throw error as ApiErrorProfile;
-      const fallback: ApiErrorProfile = { success: false, message: error?.message || 'An unexpected error occurred' };
+      if (error && error.success === false) {
+        throw error as ApiErrorResponse;
+      }
+      const fallback: ApiErrorResponse = {
+        success: false,
+        message: error?.message || 'An unexpected error occurred'
+      };
       throw fallback as unknown as Error;
     }
   }
 
-  getProfile(): Promise<ProfileResponse> {
-    return this.makeAuthedRequest<ProfileResponse>('/users/profile', { method: 'GET' });
+  async getUserProfile(): Promise<UserProfile> {
+    return this.makeAuthedRequest<UserProfile>('/users/profile', {
+      method: 'GET'
+    });
   }
 
-  updateProfile(payload: UpdateProfileRequest): Promise<ProfileResponse> {
-    return this.makeAuthedRequest<ProfileResponse>('/users/profile', {
+  async updateProfile(profileData: Partial<UserProfile>): Promise<any> {
+    const result = await this.makeAuthedRequest<any>('/users/profile', {
       method: 'PATCH',
-      body: JSON.stringify(payload),
+      body: JSON.stringify(profileData)
     });
+    return result;
   }
 
-  changePassword(payload: ChangePasswordRequest): Promise<{ success: boolean; message: string }> {
-    return this.makeAuthedRequest<{ success: boolean; message: string }>('/users/change-password', {
+  async changePassword(passwordData: ChangePasswordRequest): Promise<ChangePasswordResponse> {
+    const result = await this.makeAuthedRequest<ChangePasswordResponse>('/users/change-password', {
       method: 'PATCH',
-      body: JSON.stringify(payload),
+      body: JSON.stringify(passwordData)
     });
-  }
-
-  logout(): Promise<{ success: boolean; message: string }> {
-    return this.makeAuthedRequest<{ success: boolean; message: string }>('/auth/logout', {
-      method: 'POST',
-    });
-  }
-
-  requestAccountClosure(): Promise<{ success: boolean; message: string }> {
-    return this.makeAuthedRequest<{ success: boolean; message: string }>('/users/request-closure', {
-      method: 'POST',
-    });
+    return result;
   }
 }
 
-export const profileService = new ProfileService(BASE_URL);
+export const profileService = new ProfileService();

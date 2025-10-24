@@ -9,8 +9,9 @@ import {
   Alert,
   ActivityIndicator,
 } from 'react-native';
-import { authService, LoginRequest, RegisterRequest } from '../services/auth';
-import { authStorage } from '../services/authStorage';
+import { authService, LoginRequest, RegisterRequest } from '../../services/auth';
+import { authStorage } from '../../services/authStorage';
+import colors from '../../theme/colors';
 
 interface AuthScreenProps {
   navigation: any;
@@ -53,26 +54,24 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
     setIsLoading(true);
 
     try {
-      let response;
+      let authData;
       if (isLogin) {
         const loginData: LoginRequest = { email, password };
-        response = await authService.login(loginData);
+        authData = await authService.login(loginData);
       } else {
         const registerData: RegisterRequest = { name, email, password };
-        response = await authService.register(registerData);
+        authData = await authService.register(registerData);
       }
 
-      if (response.success && response.data) {
-        await authStorage.setToken(response.data.token);
-        await authStorage.setUser(response.data.user);
-        // Navigate to Profile screen after successful auth
-        navigation.reset({ index: 0, routes: [{ name: 'Profile' }] });
-      } else {
-        setErrors({ form: response.message || 'Authentication failed' });
-      }
+      // Store the token and user ID from auth response
+      await authStorage.setToken(authData.token);
+      await authStorage.setUserId(authData.user.id.toString());
+      
+      // Navigate to Main tab navigator after successful auth
+      navigation.reset({ index: 0, routes: [{ name: 'Main' }] });
     } catch (error: any) {
       console.error('Auth error:', error);
-      // Normalize ApiError shape coming from authService
+      // Normalize ApiErrorResponse shape coming from authService
       const apiError: any = error && error.success === false ? error : null;
       if (apiError && apiError.errors) {
         const fieldErrors: { email?: string; password?: string; name?: string; form?: string } = {};
@@ -220,7 +219,7 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.background.secondary,
   },
   content: {
     flex: 1,
@@ -272,12 +271,17 @@ const styles = StyleSheet.create({
     borderColor: '#DC2626',
   },
   authButton: {
-    backgroundColor: '#059669',
+    backgroundColor: colors.primary[600],
     paddingVertical: 16,
-    borderRadius: 12,
+    borderRadius: 16,
     alignItems: 'center',
     marginTop: 20,
     marginBottom: 16,
+    shadowColor: colors.primary[600],
+    shadowOpacity: 0.2,
+    shadowOffset: { width: 0, height: 4 },
+    shadowRadius: 8,
+    elevation: 4,
   },
   authButtonDisabled: {
     backgroundColor: '#9CA3AF',
@@ -293,7 +297,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   switchButtonText: {
-    color: '#059669',
+    color: colors.primary[600],
     fontSize: 16,
     fontWeight: '500',
   },
