@@ -48,10 +48,10 @@ output "dns_nameservers" {
 # Output the domain URLs
 output "api_url" {
   description = "API URL for the environment"
-  value = var.environment == "main" ? "http://api.beleno.clestiq.com:3000" : "http://staging.beleno.clestiq.com:3000"
+  value = var.environment == "main" ? "https://api.beleno.clestiq.com/v1" : "https://staging.beleno.clestiq.com/v1"
 }
 
 output "health_check_url" {
   description = "Health check URL for the environment"
-  value = var.environment == "main" ? "http://api.beleno.clestiq.com:3000/v1/healthz" : "http://staging.beleno.clestiq.com:3000/v1/healthz"
+  value = var.environment == "main" ? "https://api.beleno.clestiq.com/v1/healthz" : "https://staging.beleno.clestiq.com/v1/healthz"
 }

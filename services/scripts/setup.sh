@@ -107,31 +107,100 @@ chmod -R 750 "${APP_DIR}"
 
 
 # -----------------------------------------------------------------------------
-# 7. Install systemd unit and enable service
+# 7. Install systemd units and enable services
 # -----------------------------------------------------------------------------
 SERVICE_NAME="coinbreakr"
 SERVICE_FILE_SRC="/opt/coinbreakr/scripts/${SERVICE_NAME}.service"
 SERVICE_FILE_DST="/etc/systemd/system/${SERVICE_NAME}.service"
 
+STARTUP_SERVICE_NAME="coinbreakr-startup"
+STARTUP_SERVICE_FILE_SRC="/opt/coinbreakr/scripts/${STARTUP_SERVICE_NAME}.service"
+STARTUP_SERVICE_FILE_DST="/etc/systemd/system/${STARTUP_SERVICE_NAME}.service"
+
+# Install main service
 if [ -f "${SERVICE_FILE_SRC}" ]; then
   echo "📥 Installing systemd unit ${SERVICE_FILE_DST}..."
   cp "${SERVICE_FILE_SRC}" "${SERVICE_FILE_DST}"
   chmod 644 "${SERVICE_FILE_DST}"
-  systemctl daemon-reload
-  systemctl enable "${SERVICE_NAME}.service"
 else
   echo "⚠️  Systemd unit ${SERVICE_FILE_SRC} not found. Exiting."
   exit 1
 fi
 
-echo "✅ Service installed"
+# Install startup service
+if [ -f "${STARTUP_SERVICE_FILE_SRC}" ]; then
+  echo "📥 Installing startup systemd unit ${STARTUP_SERVICE_FILE_DST}..."
+  cp "${STARTUP_SERVICE_FILE_SRC}" "${STARTUP_SERVICE_FILE_DST}"
+  chmod 644 "${STARTUP_SERVICE_FILE_DST}"
+else
+  echo "⚠️  Startup systemd unit ${STARTUP_SERVICE_FILE_SRC} not found. Exiting."
+  exit 1
+fi
+
+# Reload systemd and enable services
+systemctl daemon-reload
+systemctl enable "${SERVICE_NAME}.service"
+systemctl enable "${STARTUP_SERVICE_NAME}.service"
+
+echo "✅ Services installed and enabled for auto-start"
 
 # -----------------------------------------------------------------------------
-# 8. Verify Service Configuration
+# 8. Make scripts executable
+# -----------------------------------------------------------------------------
+echo "🔧 Making scripts executable..."
+chmod +x "${APP_DIR}/scripts/"*.sh
+
+# -----------------------------------------------------------------------------
+# 9. Setup SSL Certificates
+# -----------------------------------------------------------------------------
+echo "🔐 Setting up SSL certificates..."
+"${APP_DIR}/scripts/ssl-setup.sh"
+
+# -----------------------------------------------------------------------------
+# 10. Start and Enable Service
+# -----------------------------------------------------------------------------
+echo "🚀 Starting and enabling CoinBreakr service..."
+systemctl start "${SERVICE_NAME}.service"
+systemctl enable "${SERVICE_NAME}.service"
+
+# -----------------------------------------------------------------------------
+# 11. Verify Service Configuration
 # -----------------------------------------------------------------------------
 echo "🔍 Verifying service configuration..."
 if systemctl is-enabled ${SERVICE_NAME}.service >/dev/null 2>&1; then
-  echo "✅ Service is enabled for auto-start"
+  echo "✅ Service is enabled for auto-start on boot"
 else
   echo "⚠️  Service may not be enabled properly"
 fi
+
+if systemctl is-active ${SERVICE_NAME}.service >/dev/null 2>&1; then
+  echo "✅ Service is currently running"
+else
+  echo "⚠️  Service may not be running properly"
+fi
+
+echo "🔍 Waiting for services to start..."
+sleep 30
+
+echo "🔍 Checking service status..."
+systemctl status "${SERVICE_NAME}.service" --no-pager -l
+
+# -----------------------------------------------------------------------------
+# 12. Create management symlink
+# -----------------------------------------------------------------------------
+echo "🔗 Creating management command symlink..."
+ln -sf "${APP_DIR}/scripts/manage.sh" /usr/local/bin/coinbreakr
+
+echo "✅ Setup completed! Your API will be available at:"
+echo "🌐 https://api.beleno.clestiq.com"
+echo "🌐 https://staging.beleno.clestiq.com"
+echo ""
+echo "📋 Management Commands:"
+echo "  coinbreakr status    - Check service status"
+echo "  coinbreakr restart   - Restart service"
+echo "  coinbreakr logs      - View logs"
+echo "  coinbreakr health    - Run health checks"
+echo ""
+echo "📋 Direct systemctl commands:"
+echo "  sudo systemctl status coinbreakr"
+echo "  sudo journalctl -u coinbreakr -f"

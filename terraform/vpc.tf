@@ -70,19 +70,6 @@ resource "google_compute_firewall" "allow_https" {
   target_tags   = ["coinbreakr-vm"]
 }
 
-resource "google_compute_firewall" "allow_app_port" {
-  name    = "${var.environment}-allow-app-port"
-  network = google_compute_network.vpc_network.name
-
-  allow {
-    protocol = "tcp"
-    ports    = ["3000"]
-  }
-
-  source_ranges = ["0.0.0.0/0"]
-  target_tags   = ["coinbreakr-vm"]
-}
-
 # Get the latest Coinbreakr image
 data "google_compute_image" "latest_coinbreakr" {
   family  = var.image_family

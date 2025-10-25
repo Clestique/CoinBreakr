@@ -10,7 +10,7 @@
  * Example: If your IP is 192.168.1.105, change HOST_IP to '192.168.1.105'
  */
 export const API_CONFIG = {
-    HOST_IP: '104.198.155.3', 
+    HOST_IP: '34.45.197.215', 
     PORT: 3000,
     API_VERSION: 'v1',
     TIMEOUT: 10000,
