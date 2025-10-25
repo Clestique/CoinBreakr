@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "CoinBreakr",
-    "slug": "CoinBreakr",
+    "name": "Deleno",
+    "slug": "deleno",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -10,16 +10,7 @@
     "newArchEnabled": true,
     "splash": {
       "image": "./assets/splash-icon.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#F8FAFC"
-    },
-    "ios": {
-      "supportsTablet": true,
-      "bundleIdentifier": "com.coinbreaker.app",
-      "versionCode": 1,
-      "infoPlist": {
-        "NSContactsUsageDescription": "This app needs access to contacts to help you find friends who are already using CoinBreakr and make it easier to split expenses."
-      }
+      "resizeMode": "contain"
     },
     "android": {
       "adaptiveIcon": {
@@ -27,15 +18,24 @@
         "backgroundColor": "#F8FAFC"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.coinbreaker.app",
+      "package": "com.clestiq.deleno.app",
       "predictiveBackGestureEnabled": false,
       "versionCode": 1,
       "permissions": [
         "android.permission.READ_CONTACTS"
       ]
     },
-    "web": {
-      "favicon": "./assets/favicon.png"
-    }
+    "updates": {
+      "enabled": true,
+      "fallbackToCacheTimeout": 0
+    },
+    "extra": {
+      "eas": {
+        "projectId": "e9c29b7e-90b7-42b3-8936-787ddf5617ab"
+      }
+    },
+    "plugins": [
+      "expo-font"
+    ]
   }
 }

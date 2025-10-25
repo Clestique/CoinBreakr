@@ -8,9 +8,9 @@ variable "region" {
   type        = string
 }
 
-variable "zone" {
-  description = "GCP zone"
-  type        = string
+variable "zones" {
+  description = "List of GCP zones for subnets"
+  type        = list(string)
 }
 
 variable "instance_name" {
@@ -36,4 +36,24 @@ variable "ssh_user" {
 variable "ssh_public_key_path" {
   description = "Path to SSH public key file (optional for automated deployment)"
   type        = string
+}
+
+variable "environment" {
+  description = "Environment name (staging/production)"
+  type        = string
+}
+
+variable "vpc_cidr" {
+  description = "CIDR block for VPC"
+  type        = string
+}
+
+variable "public_subnet_cidrs" {
+  description = "CIDR blocks for public subnets"
+  type        = list(string)
+}
+
+variable "private_subnet_cidrs" {
+  description = "CIDR blocks for private subnets"
+  type        = list(string)
 }

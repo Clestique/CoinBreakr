@@ -48,5 +48,6 @@ app-example
 terraform.tfstate
 terraform.tfstate.backup
 .terraform.lock.hcl
-terraform.tfvars
+terraform.staging.tfvars
+terraform.main.tfvars
 packer.pkrvars.hcl
