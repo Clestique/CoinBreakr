@@ -112,10 +112,6 @@ resource "google_compute_instance" "vm_instance" {
 
   tags = ["coinbreakr-vm"]
 
-  metadata = {
-    ssh-keys = var.ssh_public_key_path != "" ? "${var.ssh_user}:${file(var.ssh_public_key_path)}" : ""
-  }
-
   service_account {
     scopes = ["cloud-platform"]
   }

@@ -28,16 +28,6 @@ variable "machine_type" {
   type        = string
 }
 
-variable "ssh_user" {
-  description = "Username for SSH access"
-  type        = string
-}
-
-variable "ssh_public_key_path" {
-  description = "Path to SSH public key file (optional for automated deployment)"
-  type        = string
-}
-
 variable "environment" {
   description = "Environment name (staging/production)"
   type        = string
@@ -56,4 +46,15 @@ variable "public_subnet_cidrs" {
 variable "private_subnet_cidrs" {
   description = "CIDR blocks for private subnets"
   type        = list(string)
+}
+
+variable "domain_name" {
+  description = "Domain name for the application"
+  type        = string
+}
+
+variable "app_port" {
+  description = "Port where the application runs"
+  type        = number
+  default     = 3000
 }
