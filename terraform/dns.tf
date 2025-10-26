@@ -3,16 +3,16 @@ resource "google_dns_managed_zone" "beleno_zone" {
   name        = "${var.environment}-beleno-zone"
   dns_name    = "beleno.clestiq.com."
   description = "DNS zone for beleno.clestiq.com - ${var.environment} environment"
-  
+
   depends_on = [google_project_service.dns_api]
-  
+
 
 }
 
 # A record for API subdomain (main environment)
 resource "google_dns_record_set" "api_record" {
   count = var.environment == "main" ? 1 : 0
-  
+
   name         = "api.beleno.clestiq.com."
   managed_zone = google_dns_managed_zone.beleno_zone.name
   type         = "A"
@@ -23,7 +23,7 @@ resource "google_dns_record_set" "api_record" {
 # A record for staging subdomain (staging environment)
 resource "google_dns_record_set" "staging_record" {
   count = var.environment == "staging" ? 1 : 0
-  
+
   name         = "staging.beleno.clestiq.com."
   managed_zone = google_dns_managed_zone.beleno_zone.name
   type         = "A"
