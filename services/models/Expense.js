@@ -89,7 +89,7 @@ expenseSchema.pre('save', function(next) {
     error.name = 'ValidationError';
     return next(error);
   }
-  
+
   next();
 });
 
@@ -118,7 +118,7 @@ expenseSchema.virtual('totalSplitAmount').get(function() {
 
 // Virtual to check if expense is fully settled
 expenseSchema.virtual('isFullySettled').get(function() {
-  return this.splitWith.every(split => split.settled && split.user.toString() !== split.paidBy.toString());
+  return this.splitWith.every(split => split.settled || split.user.toString() === this.paidBy.toString());
 });
 
 // Instance method to settle a specific split
@@ -127,14 +127,14 @@ expenseSchema.methods.settleSplit = function(userId) {
   if (split && !split.settled) {
     split.settled = true;
     split.settledAt = new Date();
-    
-    // Check if all splits are settled
-    const allSettled = this.splitWith.every(s => s.settled && s.user.toString() !== s.paidBy.toString());
+
+    // Check if all splits are settled (excluding the person who paid)
+    const allSettled = this.splitWith.every(s => s.settled || s.user.toString() === this.paidBy.toString());
     if (allSettled) {
       this.isSettled = true;
       this.settledAt = new Date();
     }
-    
+
     return true;
   }
   return false;
@@ -186,7 +186,7 @@ expenseSchema.statics.getBalanceWithUser = async function(userId1, userId2) {
       }
     }
   });
-  
+
   return balance;
 };
 
@@ -203,7 +203,7 @@ expenseSchema.statics.getGroupExpenses = function(groupId) {
 // Static method to get user's balance in a group
 expenseSchema.statics.getUserGroupBalance = async function(userId, groupId) {
   const expenses = await this.getGroupExpenses(groupId);
-  
+
   let balance = 0;
   
   expenses.forEach(expense => {
@@ -220,7 +220,7 @@ expenseSchema.statics.getUserGroupBalance = async function(userId, groupId) {
       }
     }
   });
-  
+
   return balance;
 };
 

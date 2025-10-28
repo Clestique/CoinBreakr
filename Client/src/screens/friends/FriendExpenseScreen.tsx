@@ -106,13 +106,13 @@ const FriendExpenseScreen: React.FC = () => {
       if (expense.paidBy._id === userId) {
         // Find how much friend owes
         const friendSplit = expense.splitWith.find(split => split.user._id === friend._id);
-        if (friendSplit && !friendSplit.isPaid) {
+        if (friendSplit && !friendSplit.settled) {
           balance += friendSplit.amount; // Friend owes money (positive)
         }
       } else if (expense.paidBy._id === friend._id) {
         // If friend paid the expense
         const userSplit = expense.splitWith.find(split => split.user._id === userId);
-        if (userSplit && !userSplit.isPaid) {
+        if (userSplit && !userSplit.settled) {
           balance -= userSplit.amount; // User owes money (negative)
         }
       }
@@ -169,10 +169,10 @@ const FriendExpenseScreen: React.FC = () => {
         const friendSplit = expense.splitWith.find(split => split.user._id === friend._id);
 
         // Include expense if either user or friend paid and there are unsettled splits
-        if (expense.paidBy._id === userId && friendSplit && !friendSplit.isPaid) {
+        if (expense.paidBy._id === userId && friendSplit && !friendSplit.settled) {
           return true;
         }
-        if (expense.paidBy._id === friend._id && userSplit && !userSplit.isPaid) {
+        if (expense.paidBy._id === friend._id && userSplit && !userSplit.settled) {
           return true;
         }
 
@@ -253,9 +253,9 @@ const FriendExpenseScreen: React.FC = () => {
     const friendSplit = expense.splitWith.find(split => split.user._id === friend._id);
     const userSplit = expense.splitWith.find(split => split.user._id === userId);
 
-    if (userPaid && friendSplit && !friendSplit.isPaid) {
+    if (userPaid && friendSplit && !friendSplit.settled) {
       return 'friend_owes';
-    } else if (!userPaid && userSplit && !userSplit.isPaid) {
+    } else if (!userPaid && userSplit && !userSplit.settled) {
       return 'user_owes';
     }
 

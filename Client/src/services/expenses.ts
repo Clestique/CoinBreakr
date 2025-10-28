@@ -12,7 +12,8 @@ export interface ExpenseUser {
 export interface SplitWith {
     user: ExpenseUser;
     amount: number;
-    isPaid: boolean;
+    settled: boolean;
+    settledAt?: string;
 }
 
 export interface Expense {
@@ -111,7 +112,7 @@ class ExpensesService {
         const response = await this.makeAuthedRequest<any>(`/expenses/${expenseId}`, {
             method: 'GET',
         });
-        
+
         // Handle different response structures - return the data field if it exists
         return response.data || response;
     }
@@ -138,7 +139,7 @@ class ExpensesService {
             method: 'PUT',
             body: JSON.stringify(expenseData),
         });
-        
+
         // Handle different response structures - return the data field if it exists
         return response.data || response;
     }

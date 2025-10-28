@@ -11,7 +11,7 @@ import {
   Alert,
   TextInput,
   Modal,
-  Platform,
+
 } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { useSafeAreaInsets, SafeAreaView } from 'react-native-safe-area-context';
@@ -82,7 +82,7 @@ const ExpenseDetailScreen: React.FC = () => {
       userName: split.user?.name || '',
       userImage: split.user?.profileImage,
       amount: split.amount?.toString() || '0',
-      isPaid: split.isPaid || false
+      settled: split.settled || false
     }))
   });
 
@@ -90,6 +90,7 @@ const ExpenseDetailScreen: React.FC = () => {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
   const [showPaidByDropdown, setShowPaidByDropdown] = useState(false);
+  const [showSplitDropdown, setShowSplitDropdown] = useState(true);
 
   useEffect(() => {
     loadFriends();
@@ -154,7 +155,7 @@ const ExpenseDetailScreen: React.FC = () => {
         userName: split.user?.name || '',
         userImage: split.user?.profileImage,
         amount: split.amount?.toString() || '0',
-        isPaid: split.isPaid || false
+        settled: split.settled || false
       }))
     });
   };
@@ -204,7 +205,7 @@ const ExpenseDetailScreen: React.FC = () => {
         splitWith: editForm.splitWith.map(split => ({
           user: split.userId,
           amount: parseFloat(split.amount),
-          isPaid: split.isPaid
+          settled: split.settled
         }))
       };
 
@@ -213,11 +214,11 @@ const ExpenseDetailScreen: React.FC = () => {
         updateData.paidBy = editForm.paidBy;
       }
 
-      const updatedExpense = await expensesService.updateExpense(expense._id, updateData);
+      await expensesService.updateExpense(expense._id, updateData);
 
       // Ensure we have the updated data structure with populated fields
       const refreshedExpense = await expensesService.getExpenseById(expense._id);
-      
+
       setExpense(refreshedExpense);
       setIsEditing(false);
 
@@ -244,8 +245,12 @@ const ExpenseDetailScreen: React.FC = () => {
   const confirmSettleExpense = async () => {
     try {
       setLoading(true);
-      const settledExpense = await expensesService.settleExpense(expense._id);
-      setExpense(settledExpense);
+      await expensesService.settleExpense(expense._id);
+
+      // Refresh the expense data to get updated populated fields
+      const refreshedExpense = await expensesService.getExpenseById(expense._id);
+      setExpense(refreshedExpense);
+
       Alert.alert('Success', 'Expense has been settled successfully.');
     } catch (error: any) {
       console.error('Error settling expense:', error);
@@ -255,9 +260,40 @@ const ExpenseDetailScreen: React.FC = () => {
     }
   };
 
+  const handleSettleSplit = async () => {
+    Alert.alert(
+      'Settle Your Split',
+      'Are you sure you want to mark your split as paid?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Mark as Paid', onPress: confirmSettleSplit }
+      ]
+    );
+  };
+
+  const confirmSettleSplit = async () => {
+    try {
+      setLoading(true);
+      await expensesService.settleExpense(expense._id);
+
+      // Refresh the expense data to get updated populated fields
+      const refreshedExpense = await expensesService.getExpenseById(expense._id);
+      setExpense(refreshedExpense);
+
+      Alert.alert('Success', 'Your split has been marked as paid.');
+    } catch (error: any) {
+      console.error('Error settling split:', error);
+      Alert.alert('Error', error.message || 'Unable to settle your split. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const updateSplitAmount = (userId: string, amount: string) => {
     setEditForm(prev => ({
       ...prev,
+
+
       splitWith: prev.splitWith.map(split =>
         split.userId === userId ? { ...split, amount } : split
       )
@@ -399,13 +435,16 @@ const ExpenseDetailScreen: React.FC = () => {
             </View>
             <View style={styles.expenseInfo}>
               {isEditing ? (
-                <TextInput
-                  style={styles.editTitleInput}
-                  value={editForm.title}
-                  onChangeText={(text) => setEditForm(prev => ({ ...prev, title: text }))}
-                  placeholder="Expense title"
-                  maxLength={100}
-                />
+                <View style={styles.titleInputContainer}>
+                  <Text style={styles.inputLabel}>Title</Text>
+                  <TextInput
+                    style={styles.editTitleInput}
+                    value={editForm.title}
+                    onChangeText={(text) => setEditForm(prev => ({ ...prev, title: text }))}
+                    placeholder="Enter expense title"
+                    maxLength={100}
+                  />
+                </View>
               ) : (
                 <Text style={styles.expenseTitle}>{expense.title}</Text>
               )}
@@ -425,10 +464,10 @@ const ExpenseDetailScreen: React.FC = () => {
               ) : (
                 <View style={styles.amountContainer}>
                   <Text style={styles.expenseAmount}>${(expense.amount || 0).toFixed(2)}</Text>
-                  {!isEditing && !expense.isSettled && (
+                  {!isEditing && !expense.isSettled && userSplit && !userSplit.settled && !userPaid && (
                     <TouchableOpacity
                       style={styles.settleButton}
-                      onPress={handleSettleExpense}
+                      onPress={handleSettleSplit}
                       disabled={loading}
                     >
                       <Text style={styles.settleButtonText}>Settle Split</Text>
@@ -586,23 +625,42 @@ const ExpenseDetailScreen: React.FC = () => {
               )}
             </View>
 
-            {/* Status */}
-            <View style={styles.paymentRow}>
-              <Text style={styles.paymentLabel}>Status</Text>
-              <Text style={[
-                styles.paymentValue,
-                { color: expense.isSettled ? '#10B981' : '#F59E0B' }
-              ]}>
-                {expense.isSettled ? 'Settled' : 'Pending'}
-              </Text>
-            </View>
+            {/* Status - Only visible to paidBy or creator */}
+            {(userPaid || expense.createdBy?._id === userId) && (
+              <View style={styles.paymentRow}>
+                <Text style={styles.paymentLabel}>Status</Text>
+                <Text style={[
+                  styles.paymentValue,
+                  { color: expense.isSettled ? '#10B981' : '#F59E0B' }
+                ]}>
+                  {(() => {
+                    // Check if all participants (excluding paidBy) have paid
+                    const participantsExcludingPayer = (expense.splitWith || []).filter(
+                      split => split.user?._id !== expense.paidBy?._id
+                    );
+                    const allParticipantsPaid = participantsExcludingPayer.every(split => split.settled);
+                    return allParticipantsPaid ? 'All participants paid' : 'Waiting for payments';
+                  })()}
+                </Text>
+              </View>
+            )}
           </View>
         </View>
 
         {/* Split Details */}
         <View style={styles.section}>
           <View style={styles.splitHeader}>
-            <Text style={styles.sectionTitle}>Split Details</Text>
+            <TouchableOpacity
+              style={styles.splitHeaderButton}
+              onPress={() => setShowSplitDropdown(!showSplitDropdown)}
+            >
+              <Text style={[styles.sectionTitle, { marginBottom: 0 }]}>Split Details</Text>
+              <Ionicons
+                name={showSplitDropdown ? "chevron-up" : "chevron-down"}
+                size={20}
+                color={colors.text.tertiary}
+              />
+            </TouchableOpacity>
             {isEditing && (
               <View style={styles.splitValidation}>
                 {(() => {
@@ -625,85 +683,75 @@ const ExpenseDetailScreen: React.FC = () => {
               </View>
             )}
           </View>
-          <View style={styles.splitContainer}>
-            {isEditing ? (
-              editForm.splitWith.map((split, index) => (
-                <View key={split.userId} style={[
-                  styles.splitRow,
-                  index === editForm.splitWith.length - 1 && styles.lastSplitRow
-                ]}>
-                  <View style={styles.splitUser}>
-                    <Image
-                      source={{ uri: getProfileImageUri(split.userImage, 32) }}
-                      style={styles.splitAvatar}
-                    />
-                    <Text style={styles.splitUserName}>{split.userName}</Text>
-                  </View>
-                  <View style={styles.splitAmount}>
-                    <View style={styles.editSplitContainer}>
-                      <Text style={styles.currencySymbol}>$</Text>
-                      <TextInput
-                        style={styles.splitAmountInput}
-                        value={split.amount}
-                        onChangeText={(text) => updateSplitAmount(split.userId, text)}
-                        keyboardType="decimal-pad"
-                        placeholder="0.00"
+          {showSplitDropdown && (
+            <View style={styles.splitContainer}>
+              {isEditing ? (
+                editForm.splitWith.map((split, index) => (
+                  <View key={split.userId} style={[
+                    styles.splitRow,
+                    index === editForm.splitWith.length - 1 && styles.lastSplitRow
+                  ]}>
+                    <View style={styles.splitUser}>
+                      <Image
+                        source={{ uri: getProfileImageUri(split.userImage, 32) }}
+                        style={styles.splitAvatar}
                       />
+                      <Text style={styles.splitUserName}>{split.userName}</Text>
+                    </View>
+                    <View style={styles.splitAmount}>
+                      <View style={styles.editSplitContainer}>
+                        <Text style={styles.currencySymbol}>$</Text>
+                        <TextInput
+                          style={styles.splitAmountInput}
+                          value={split.amount}
+                          onChangeText={(text) => updateSplitAmount(split.userId, text)}
+                          keyboardType="decimal-pad"
+                          placeholder="0.00"
+                        />
+                      </View>
                     </View>
                   </View>
-                </View>
-              ))
-            ) : (
-              (expense.splitWith || []).map((split, index) => (
-                <View key={index} style={[
-                  styles.splitRow,
-                  index === (expense.splitWith || []).length - 1 && styles.lastSplitRow
-                ]}>
-                  <View style={styles.splitUser}>
-                    <Image
-                      source={{ uri: getProfileImageUri(split.user?.profileImage, 32) }}
-                      style={styles.splitAvatar}
-                    />
-                    <Text style={styles.splitUserName}>{split.user?.name || 'Unknown'}</Text>
-                  </View>
-                  <View style={styles.splitAmount}>
-                    <Text style={styles.splitAmountText}>
-                      ${(split.amount || 0).toFixed(2)}
-                    </Text>
-                    <Text style={[
-                      styles.splitStatus,
-                      { color: split.isPaid ? '#10B981' : '#EF4444' }
+                ))
+              ) : (
+                // Show all participants in split details
+                (expense.splitWith || []).map((split, index) => {
+                  const isPaidByUser = split.user?._id === expense.paidBy?._id;
+                  const isCurrentUser = split.user?._id === userId;
+
+                  return (
+                    <View key={index} style={[
+                      styles.splitRow,
+                      index === (expense.splitWith || []).length - 1 && styles.lastSplitRow
                     ]}>
-                      {split.isPaid ? 'Paid' : 'Owes'}
-                    </Text>
-                  </View>
-                </View>
-              ))
-            )}
-          </View>
+                      <View style={styles.splitUser}>
+                        <Image
+                          source={{ uri: getProfileImageUri(split.user?.profileImage, 32) }}
+                          style={styles.splitAvatar}
+                        />
+                        <Text style={styles.splitUserName}>
+                          {isCurrentUser ? 'You' : split.user?.name || 'Unknown'}
+                        </Text>
+                      </View>
+                      <View style={styles.splitAmount}>
+                        <Text style={styles.splitAmountText}>
+                          ${(split.amount || 0).toFixed(2)}
+                        </Text>
+                        <Text style={[
+                          styles.splitStatus,
+                          { color: (isPaidByUser || split.settled) ? '#10B981' : '#EF4444' }
+                        ]}>
+                          {isPaidByUser ? 'Paid for the expense' : split.settled ? 'Paid' : 'Owes'}
+                        </Text>
+                      </View>
+                    </View>
+                  );
+                })
+              )}
+            </View>
+          )}
         </View>
 
-        {/* Your Share */}
-        {userSplit && (
-          <View style={styles.lastSection}>
-            <Text style={styles.sectionTitle}>Your Share</Text>
-            <View style={styles.userShareContainer}>
-              <View style={styles.userShareRow}>
-                <Text style={styles.userShareLabel}>Amount</Text>
-                <Text style={styles.userShareAmount}>${userSplit.amount.toFixed(2)}</Text>
-              </View>
-              <View style={styles.userShareRow}>
-                <Text style={styles.userShareLabel}>Status</Text>
-                <Text style={[
-                  styles.userShareStatus,
-                  { color: userSplit.isPaid ? '#10B981' : '#EF4444' }
-                ]}>
-                  {userSplit.isPaid ? 'Paid' : userPaid ? 'You paid' : 'You owe'}
-                </Text>
-              </View>
-            </View>
-          </View>
-        )}
+
       </ScrollView>
 
       {/* Date Picker Modal */}
@@ -904,13 +952,15 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   editTitleInput: {
-    fontSize: 24,
-    fontWeight: '700',
+    fontSize: 18,
+    fontWeight: '600',
     color: colors.text.primary,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border.light,
-    paddingVertical: 4,
-    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: colors.border.light,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    backgroundColor: colors.background.primary,
   },
   editAmountContainer: {
     flexDirection: 'row',
@@ -1128,6 +1178,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 16,
   },
+  splitHeaderButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    flex: 1,
+  },
+  titleInputContainer: {
+    marginBottom: 8,
+  },
+  inputLabel: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: colors.text.secondary,
+    marginBottom: 4,
+  },
   splitValidation: {
     alignItems: 'flex-end',
   },
@@ -1151,34 +1216,7 @@ const styles = StyleSheet.create({
     minWidth: 60,
     textAlign: 'center',
   },
-  lastSection: {
-    backgroundColor: colors.background.primary,
-    paddingHorizontal: 24,
-    paddingVertical: 20,
-  },
-  userShareContainer: {
-    paddingVertical: 8,
-  },
-  userShareRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 8,
-  },
-  userShareLabel: {
-    fontSize: 16,
-    color: colors.text.secondary,
-    fontWeight: '500',
-  },
-  userShareAmount: {
-    fontSize: 18,
-    color: colors.text.primary,
-    fontWeight: '700',
-  },
-  userShareStatus: {
-    fontSize: 14,
-    fontWeight: '600',
-  },
+
   loadingOverlay: {
     position: 'absolute',
     top: 0,

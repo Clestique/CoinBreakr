@@ -424,7 +424,7 @@ const settleExpenseSplit = async (req, res) => {
     }
 
     // Check if user is involved in this expense
-    const isInvolved = expense.splitWith.some(split => split.user.toString() === req.userId.toString()) && !isAdmin;
+    const isInvolved = expense.splitWith.some(split => split.user.toString() === req.userId.toString());
 
     if (!isInvolved) {
       return res.status(403).json({
@@ -434,7 +434,7 @@ const settleExpenseSplit = async (req, res) => {
     }
 
     // Settle the split
-    const splitToSettle = expense.splitWith.find(split => split.user.toString() === req.userId);
+    const splitToSettle = expense.splitWith.find(split => split.user.toString() === req.userId.toString());
     if (!splitToSettle) {
       return res.status(400).json({
         success: false,

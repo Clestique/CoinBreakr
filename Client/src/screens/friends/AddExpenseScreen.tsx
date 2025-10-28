@@ -16,7 +16,7 @@ import { useSafeAreaInsets, SafeAreaView } from 'react-native-safe-area-context'
 import { Ionicons } from '@expo/vector-icons';
 import colors from '../../theme/colors';
 import { getProfileImageUri } from '../../utils/defaultImage';
-import { Friend, friendsService, Group } from '../../services/friends';
+import { Friend, friendsService } from '../../services/friends';
 import { expensesService } from '../../services/expenses';
 import { useAuth } from '../../hooks/useAuth';
 
@@ -37,6 +37,8 @@ interface SplitData {
     userId: string;
     amount: number;
     percentage?: number;
+    amountText?: string; // Store the raw text input
+    percentageText?: string; // Store the raw text input
 }
 
 type SplitType = 'equal' | 'percentage' | 'unequal';
@@ -69,35 +71,18 @@ const AddExpenseScreen: React.FC = () => {
     const [loadingFriends, setLoadingFriends] = useState(false);
     const [showPaidByDropdown, setShowPaidByDropdown] = useState(false);
 
+    // Initialize data on mount
     useEffect(() => {
         loadFriends();
         initializeParticipants();
-        // Ensure paidBy is set to current user by default
-        if (userId) {
-            setPaidBy(userId);
-        }
     }, [userId]);
 
+    // Only handle split calculations
     useEffect(() => {
         if (selectedParticipants.length > 0 && amount) {
             calculateSplit();
         }
-
-        // Ensure paidBy is always set to current user if not already set or if current paidBy is not in participants
-        if (selectedParticipants.length > 0) {
-            const currentPayer = selectedParticipants.find(p => p._id === paidBy);
-            if (!currentPayer && userId) {
-                setPaidBy(userId);
-            }
-        }
-    }, [selectedParticipants, amount, splitType, paidBy, userId]);
-
-    // Additional useEffect to ensure split calculation happens when participants are ready
-    useEffect(() => {
-        if (selectedParticipants.length > 0) {
-            calculateSplit();
-        }
-    }, [selectedParticipants, splitType]);
+    }, [selectedParticipants, amount, splitType]);
 
     const loadFriends = async () => {
         try {
@@ -152,6 +137,12 @@ const AddExpenseScreen: React.FC = () => {
         }
 
         setSelectedParticipants(participants);
+
+        // Set paidBy to current user if available, otherwise first participant
+        if (participants.length > 0 && userId) {
+            const currentUser = participants.find(p => p._id === userId);
+            setPaidBy(currentUser ? userId : participants[0]._id);
+        }
     };
 
     const calculateSplit = () => {
@@ -178,24 +169,22 @@ const AddExpenseScreen: React.FC = () => {
                 break;
 
             case 'percentage':
-                // Initialize with equal percentages, user can modify
+                // Initialize with empty percentages for user to fill
                 selectedParticipants.forEach(participant => {
-                    const percentage = 100 / participantCount;
                     newSplitData.push({
                         userId: participant._id,
-                        amount: (totalAmount * percentage) / 100,
-                        percentage: percentage,
+                        amount: 0,
+                        percentage: 0,
                     });
                 });
                 break;
 
             case 'unequal':
-                // Initialize with equal amounts, user can modify
-                const unequalAmount = totalAmount / participantCount;
+                // Initialize with empty amounts for user to fill
                 selectedParticipants.forEach(participant => {
                     newSplitData.push({
                         userId: participant._id,
-                        amount: unequalAmount,
+                        amount: 0,
                     });
                 });
                 break;
@@ -240,23 +229,29 @@ const AddExpenseScreen: React.FC = () => {
             return;
         }
 
+        // If removing the person who paid, reset to current user
+        if (participantId === paidBy && userId) {
+            setPaidBy(userId);
+        }
+
         setSelectedParticipants(prev => prev.filter(p => p._id !== participantId));
     };
 
     const updateSplitAmount = (userId: string, newAmount: string) => {
-        const amount = parseFloat(newAmount) || 0;
+        // Store both the text and numeric value
+        const amount = newAmount === '' ? 0 : parseFloat(newAmount) || 0;
         setSplitData(prev => prev.map(split =>
-            split.userId === userId ? { ...split, amount } : split
+            split.userId === userId ? { ...split, amount, amountText: newAmount } : split
         ));
     };
 
     const updateSplitPercentage = (userId: string, newPercentage: string) => {
-        const percentage = parseFloat(newPercentage) || 0;
+        const percentage = newPercentage === '' ? 0 : parseFloat(newPercentage) || 0;
         const totalAmount = parseFloat(amount) || 0;
         const newAmount = (totalAmount * percentage) / 100;
 
         setSplitData(prev => prev.map(split =>
-            split.userId === userId ? { ...split, percentage, amount: newAmount } : split
+            split.userId === userId ? { ...split, percentage, amount: newAmount, percentageText: newPercentage } : split
         ));
     };
 
@@ -280,6 +275,13 @@ const AddExpenseScreen: React.FC = () => {
         if (splitType !== 'equal') {
             const totalSplitAmount = splitData.reduce((sum, split) => sum + split.amount, 0);
             const expenseAmount = parseFloat(amount);
+
+            // Check if any split amounts are empty (0) for unequal/percentage
+            const hasEmptyAmounts = splitData.some(split => split.amount === 0);
+            if (hasEmptyAmounts) {
+                Alert.alert('Error', `Please enter ${splitType === 'percentage' ? 'percentages' : 'amounts'} for all participants.`);
+                return false;
+            }
 
             if (Math.abs(totalSplitAmount - expenseAmount) > 0.01) {
                 Alert.alert('Error', 'Split amounts do not add up to the total expense amount.');
@@ -366,7 +368,29 @@ const AddExpenseScreen: React.FC = () => {
 
     const getPaidByName = () => {
         const payer = selectedParticipants.find(p => p._id === paidBy);
-        return payer ? payer.name : 'You';
+        if (payer) {
+            return payer.name;
+        }
+        // Fallback: if paidBy matches userId, return 'You'
+        if (paidBy === userId) {
+            return 'You';
+        }
+        return 'Unknown';
+    };
+
+    const formatAmount = (amount: number, preserveDecimals: boolean = false): string => {
+        if (preserveDecimals) {
+            // For user input, preserve the format they entered
+            return amount.toString();
+        }
+        // For display, remove unnecessary decimals
+        return amount % 1 === 0 ? amount.toString() : amount.toFixed(2);
+    };
+
+    const calculateSplitDifference = (): number => {
+        const totalAmount = parseFloat(amount) || 0;
+        const totalSplitAmount = splitData.reduce((sum, split) => sum + split.amount, 0);
+        return totalAmount - totalSplitAmount;
     };
 
     return (
@@ -610,7 +634,22 @@ const AddExpenseScreen: React.FC = () => {
                     {/* Split Details - Show when amount and participants are present */}
                     {selectedParticipants.length > 0 && amount && splitData.length > 0 && (
                         <View style={styles.splitDetailsContainer}>
-                            <Text style={styles.splitDetailsTitle}>Split Breakdown</Text>
+                            <View style={styles.splitDetailsHeader}>
+                                <Text style={styles.splitDetailsTitle}>Split Breakdown</Text>
+                                {splitType !== 'equal' && (
+                                    <View style={styles.splitCalculation}>
+                                        <Text style={styles.splitCalculationText}>
+                                            Remaining: ${formatAmount(Math.abs(calculateSplitDifference()))}
+                                            {calculateSplitDifference() !== 0 && (
+                                                <Text style={[styles.splitCalculationStatus,
+                                                calculateSplitDifference() > 0 ? styles.splitUnder : styles.splitOver]}>
+                                                    {calculateSplitDifference() > 0 ? ' (under)' : ' (over)'}
+                                                </Text>
+                                            )}
+                                        </Text>
+                                    </View>
+                                )}
+                            </View>
                             {splitData.map((split) => {
                                 const participant = selectedParticipants.find(p => p._id === split.userId);
                                 if (!participant) return null;
@@ -629,19 +668,19 @@ const AddExpenseScreen: React.FC = () => {
                                             {splitType === 'percentage' ? (
                                                 <TextInput
                                                     style={styles.splitInput}
-                                                    value={split.percentage?.toFixed(1) || '0'}
+                                                    value={split.percentageText !== undefined ? split.percentageText : (split.percentage ? formatAmount(split.percentage) : '')}
                                                     onChangeText={(value) => updateSplitPercentage(split.userId, value)}
                                                     keyboardType="decimal-pad"
-                                                    placeholder="0%"
+                                                    placeholder="0"
                                                 />
                                             ) : (
                                                 <TextInput
                                                     style={[styles.splitInput, splitType === 'equal' && styles.disabledInput]}
-                                                    value={split.amount.toFixed(2)}
+                                                    value={splitType === 'equal' ? formatAmount(split.amount) : (split.amountText !== undefined ? split.amountText : (split.amount > 0 ? formatAmount(split.amount) : ''))}
                                                     onChangeText={(value) => updateSplitAmount(split.userId, value)}
                                                     keyboardType="decimal-pad"
                                                     editable={splitType !== 'equal'}
-                                                    placeholder="0.00"
+                                                    placeholder="0"
                                                 />
                                             )}
                                         </View>
@@ -965,11 +1004,34 @@ const styles = StyleSheet.create({
         borderRadius: 12,
         padding: 16,
     },
+    splitDetailsHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 12,
+    },
     splitDetailsTitle: {
         fontSize: 14,
         fontWeight: '600',
         color: colors.text.primary,
-        marginBottom: 12,
+    },
+    splitCalculation: {
+        alignItems: 'flex-end',
+    },
+    splitCalculationText: {
+        fontSize: 12,
+        fontWeight: '500',
+        color: colors.text.secondary,
+    },
+    splitCalculationStatus: {
+        fontSize: 12,
+        fontWeight: '600',
+    },
+    splitUnder: {
+        color: colors.warning?.[600] || '#f59e0b',
+    },
+    splitOver: {
+        color: colors.error?.[600] || '#dc2626',
     },
     splitItem: {
         flexDirection: 'row',
