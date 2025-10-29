@@ -19,36 +19,19 @@ const contactLimiter = rateLimit({
     skip: (req) => process.env.NODE_ENV !== 'production'
 });
 
-// CORS middleware for contact endpoint
-const corsOptions = {
-    origin: function (origin, callback) {
-        // Allow requests with no origin (mobile apps, curl, etc.)
-        if (!origin) return callback(null, true);
+// Simple CORS headers middleware
+router.use((req, res, next) => {
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Methods', 'GET, PATCH, POST, PUT, DELETE, OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
 
-        // In development, allow all origins
-        if (process.env.NODE_ENV !== 'production') {
-            return callback(null, true);
-        }
-
-        // In production, add your website domains here
-        const allowedOrigins = [
-            'https://splitlyr.clestiq.com',
-            'https://www.splitlyr.clestiq.com',
-            'http://localhost:3000',
-            'http://localhost:3001'
-        ];
-
-        if (allowedOrigins.indexOf(origin) !== -1) {
-            callback(null, true);
-        } else {
-            callback(new Error('Not allowed by CORS'));
-        }
-    },
-    credentials: true
-};
-
-// Apply CORS to all contact routes
-router.use(require('cors')(corsOptions));
+    // Handle preflight requests
+    if (req.method === 'OPTIONS') {
+        res.sendStatus(200);
+    } else {
+        next();
+    }
+});
 
 // Public routes
 router.post('/', contactLimiter, createContact);
