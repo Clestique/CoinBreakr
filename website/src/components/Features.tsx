@@ -27,15 +27,7 @@ export default function Features() {
       title: "Real-time Balance Tracking",
       description: "See exactly who owes you money and who you owe at a glance. Automatic calculations keep everyone's balances up to date."
     },
-    {
-      icon: (
-        <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3a2 2 0 012-2h4a2 2 0 012 2v4m-6 0V6a2 2 0 012-2h4a2 2 0 012 2v1m-6 0h8m-8 0l1 12a2 2 0 002 2h6a2 2 0 002-2l1-12m-8 0V9a2 2 0 012-2h4a2 2 0 012 2v.01" />
-        </svg>
-      ),
-      title: "Receipt & Photo Upload",
-      description: "Snap photos of receipts and add them to expenses. Keep detailed records with notes and categories for easy reference."
-    },
+
     {
       icon: (
         <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -51,8 +43,8 @@ export default function Features() {
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
         </svg>
       ),
-      title: "Works Offline",
-      description: "Add expenses and view balances even without internet. Everything syncs automatically when you're back online."
+      title: "Partially Offline Mode",
+      description: "View your existing expenses and balances without internet. New expenses and changes sync when you're back online."
     }
   ]
 

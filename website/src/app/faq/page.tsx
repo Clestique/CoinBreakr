@@ -30,20 +30,9 @@ export default function FAQ() {
     },
     {
       question: "Is my financial data secure?",
-      answer: "Your privacy and security are our top priorities. All data is encrypted in transit and at rest. We never store banking information or payment details - only the expense amounts and descriptions you choose to share."
+      answer: "Your privacy and security are our top priorities. Only credentials are encrypted at rest. We never store banking information or payment details - only the expense amounts and descriptions you choose to share."
     },
-    {
-      question: "Can I export my expense data?",
-      answer: "Yes, you can export your expense history and transaction data at any time. This is useful for personal budgeting, tax purposes, or if you want to switch to another service."
-    },
-    {
-      question: "What if someone doesn't have the app?",
-      answer: "You can still add expenses involving people who don't have Splitlyr. They'll receive notifications about shared expenses via email or SMS, and can view their balance through a web link without needing to download the app."
-    },
-    {
-      question: "How do I delete my account?",
-      answer: "You can delete your account anytime from the app settings. This will permanently remove all your data from our servers. Make sure to settle any outstanding balances before deleting your account."
-    },
+
     {
       question: "Does Splitlyr work offline?",
       answer: "You can view your existing expenses and balances offline, but adding new expenses or syncing with friends requires an internet connection. Any changes made offline will sync when you're back online."
@@ -91,7 +80,8 @@ export default function FAQ() {
           </p>
           <a
             href="/contact"
-            className="inline-flex items-center splitlyr-gradient text-white px-6 py-3 rounded-lg hover:opacity-90 transition-opacity font-medium"
+            className="inline-flex items-center text-white px-6 py-3 rounded-lg hover:opacity-90 transition-opacity font-medium"
+            style={{ backgroundColor: '#14B8A6' }}
           >
             Contact Support
             <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
