@@ -28,7 +28,6 @@ export default function Privacy() {
               <ul className="list-disc pl-6 text-gray-700 space-y-2">
                 <li>Calculate expense splits and balances between users</li>
                 <li>Facilitate expense sharing with friends and groups</li>
-                <li>Send payment reminders and settlement notifications</li>
                 <li>Improve app functionality and user experience</li>
                 <li>Send important app updates and notifications</li>
               </ul>
@@ -40,20 +39,13 @@ export default function Privacy() {
                 We implement industry-standard security measures to protect your data:
               </p>
               <ul className="list-disc pl-6 text-gray-700 space-y-2">
-                <li>All data is encrypted in transit and at rest</li>
                 <li>No sensitive payment or banking information is stored</li>
                 <li>Regular security audits and updates</li>
                 <li>Secure user authentication and authorization</li>
               </ul>
             </section>
 
-            <section className="mb-8">
-              <h2 className="text-2xl font-semibold text-gray-900 mb-4">Third-Party Services</h2>
-              <p className="text-gray-700 mb-4">
-                Splitlyr may integrate with analytics and notification services to improve app functionality.
-                These services may collect anonymous usage data in accordance with their own privacy policies.
-              </p>
-            </section>
+
 
             <section className="mb-8">
               <h2 className="text-2xl font-semibold text-gray-900 mb-4">Your Rights</h2>
@@ -69,9 +61,9 @@ export default function Privacy() {
             <section className="mb-8">
               <h2 className="text-2xl font-semibold text-gray-900 mb-4">Contact Us</h2>
               <p className="text-gray-700">
-                If you have questions about this Privacy Policy, please contact us at{' '}
-                <a href="mailto:privacy@splitlyr.com" className="text-primary-500 hover:text-primary-600 transition-colors">
-                  privacy@splitlyr.com
+                If you have questions about this Privacy Policy, please{' '}
+                <a href="/contact" className="text-primary-500 hover:text-primary-600 transition-colors">
+                  contact us
                 </a>
               </p>
             </section>

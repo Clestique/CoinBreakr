@@ -48,7 +48,7 @@ This website is designed for **brand image and marketing purposes only**. It ser
 - **FAQ**: Frequently asked questions about the app
 - **Privacy Policy**: Comprehensive privacy policy for app users
 - **Terms of Service**: Legal terms and conditions
-- **Release Notes**: App updates and version history
+- **Release Notes**: App updates and version history with launch countdown
 
 ### 🧭 Navigation & UX
 - **Sticky Header**: Easy navigation with app download CTA
@@ -189,34 +189,6 @@ website/
 - **Buttons**: Primary and secondary variants
 - **Forms**: Consistent input styling
 - **Navigation**: Responsive header and footer
-
-## 🌐 Deployment
-
-### Recommended Platforms
-
-#### Vercel (Recommended)
-```bash
-# Install Vercel CLI
-npm i -g vercel
-
-# Deploy
-vercel --prod
-```
-
-#### Netlify
-```bash
-# Build command
-npm run build
-
-# Publish directory
-out/
-```
-
-#### Other Platforms
-- **AWS Amplify**: Full-stack deployment
-- **Google Cloud Platform**: Cloud Run or App Engine
-- **DigitalOcean**: App Platform
-- **Railway**: Simple deployment
 
 ### Environment Variables
 ```bash
@@ -366,6 +338,50 @@ npx tsc --noEmit
 npm update @types/node @types/react @types/react-dom
 ```
 
+## � Recent Fegatures & Components
+
+### ⏰ Launch Countdown System
+- **CountdownTimer Component**: Real-time countdown timer with days, hours, minutes, seconds
+- **Launch Integration**: Integrated countdown in Download section and Release page
+- **Dynamic Updates**: Live countdown that updates every second
+- **Completion Handling**: Automatic callback when countdown reaches zero
+
+### 📱 Beta Testing Integration
+- **AndroidDownloadButton**: Smart download button for beta testing
+- **Environment Configuration**: Testing app URL stored in `.env` file
+- **User Flow**: Direct users to beta testing while countdown is active
+- **Seamless Transition**: Automatic switch to production app store after launch
+
+### 🎨 Enhanced UI Components
+- **Improved Contrast**: Better visibility for countdown timer with white background
+- **Brand Colors**: Consistent use of teal (`#14B8A6`) throughout components
+- **Responsive Design**: All components work seamlessly across devices
+- **Accessibility**: Proper ARIA labels and keyboard navigation support
+
+### ⚙️ Environment Variables
+```bash
+# Beta testing configuration
+NEXT_PUBLIC_TESTING_APP_URL=https://play.google.com/apps/testing/com.splitlyr.app
+NEXT_PUBLIC_API_URL=http://staging.splitlyr.clestiq.com:3000
+```
+
+### 🔧 Component Architecture
+```
+Components Structure:
+├── CountdownTimer.tsx       # Reusable countdown with customizable styling
+├── AndroidDownloadButton.tsx # Beta testing download functionality  
+├── Download.tsx            # Main download section with countdown integration
+├── Features.tsx            # Updated feature list (removed non-implemented features)
+├── ContactForm.tsx         # Contact form with API integration
+└── Header/Footer.tsx       # Navigation with absolute path links
+```
+
+### 📊 Content Management
+- **Feature Accuracy**: Removed non-implemented features (receipt upload, full offline mode)
+- **Realistic Messaging**: Updated from marketing claims to actual app capabilities
+- **Beta Communication**: Clear messaging about beta testing availability
+- **Launch Timing**: Flexible countdown system for launch date management
+
 ## 📈 Monitoring & Maintenance
 
 ### Performance Monitoring
@@ -379,6 +395,8 @@ npm update @types/node @types/react @types/react-dom
 - **App Store Links**: Keep download links current
 - **Feature Updates**: Sync with mobile app releases
 - **Legal Pages**: Review privacy policy and terms annually
+- **Countdown Management**: Update launch dates in environment variables
+- **Beta Testing**: Monitor and update testing app URLs as needed
 
 ## 🔗 Integration with Mobile App
 

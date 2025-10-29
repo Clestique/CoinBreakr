@@ -127,9 +127,9 @@ export default function Terms() {
             <section className="mb-8">
               <h2 className="text-2xl font-semibold text-gray-900 mb-4">11. Contact Information</h2>
               <p className="text-gray-700">
-                If you have questions about these Terms of Service, please contact us at{' '}
-                <a href="mailto:legal@splitlyr.com" className="text-primary-500 hover:text-primary-600 transition-colors">
-                  legal@splitlyr.com
+                If you have questions about these Terms of Service, please{' '}
+                <a href="/contact" className="text-primary-500 hover:text-primary-600 transition-colors">
+                  contact us
                 </a>
               </p>
             </section>
