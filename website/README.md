@@ -1,6 +1,6 @@
-# CoinBreakr Website
+# Splitlyr Website
 
-A professional Next.js website for the CoinBreakr mobile expense splitting app.
+A professional Next.js website for the Splitlyr mobile expense splitting app.
 
 ## Features
 
@@ -88,4 +88,4 @@ Update the app store URLs in:
 
 ## License
 
-This project is part of the CoinBreakr application suite.
+This project is part of the Splitlyr application suite.

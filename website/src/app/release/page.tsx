@@ -1,93 +1,93 @@
 export default function Release() {
   return (
-    <div className="min-h-screen bg-gray-50 py-16">
+    <div className="min-h-screen py-16" style={{ backgroundColor: '#F8FAFC' }}>
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12">
-          <h1 className="text-3xl font-bold text-gray-900 mb-4">🎉 CoinBreakr is Now Live!</h1>
-          <p className="text-xl text-gray-600">
+          <h1 className="text-3xl font-bold mb-4" style={{ color: '#0F172A' }}>🎉 Splitlyr is Now Live!</h1>
+          <p className="text-xl" style={{ color: '#64748B' }}>
             The easiest way to split expenses with friends and family
           </p>
         </div>
 
         <div className="bg-white rounded-lg shadow-lg p-8 mb-8">
           <div className="text-center mb-8">
-            <div className="w-24 h-24 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-6">
-              <span className="text-white text-4xl font-bold">CB</span>
+            <div className="w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-6" style={{ backgroundColor: '#14B8A6' }}>
+              <span className="text-white text-4xl font-bold">S</span>
             </div>
-            <h2 className="text-2xl font-semibold text-gray-900 mb-4">Version 1.0.0 - Launch Release</h2>
-            <p className="text-gray-600 mb-6">Released on {new Date().toLocaleDateString()}</p>
+            <h2 className="text-2xl font-semibold mb-4" style={{ color: '#0F172A' }}>Version 1.0.0 - Launch Release</h2>
+            <p className="mb-6" style={{ color: '#64748B' }}>Released on {new Date().toLocaleDateString()}</p>
           </div>
 
           <div className="grid md:grid-cols-2 gap-8 mb-8">
             <div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-4">🚀 Launch Features</h3>
+              <h3 className="text-xl font-semibold mb-4" style={{ color: '#0F172A' }}>🍕 Bill Splitting Features</h3>
               <ul className="space-y-3">
                 <li className="flex items-start space-x-3">
-                  <svg className="w-5 h-5 text-green-600 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-5 h-5 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ color: '#10B981' }}>
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
-                  <span className="text-gray-700">Smart expense splitting with equal and custom divisions</span>
+                  <span style={{ color: '#334155' }}>Split restaurant bills, groceries, and rent equally or by custom amounts</span>
                 </li>
                 <li className="flex items-start space-x-3">
-                  <svg className="w-5 h-5 text-green-600 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-5 h-5 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ color: '#10B981' }}>
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
-                  <span className="text-gray-700">Friend management and group creation</span>
+                  <span style={{ color: '#334155' }}>Create groups for roommates, trips, and shared activities</span>
                 </li>
                 <li className="flex items-start space-x-3">
-                  <svg className="w-5 h-5 text-green-600 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-5 h-5 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ color: '#10B981' }}>
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
-                  <span className="text-gray-700">Real-time balance tracking and calculations</span>
+                  <span style={{ color: '#334155' }}>Track who owes what with real-time balance calculations</span>
                 </li>
                 <li className="flex items-start space-x-3">
-                  <svg className="w-5 h-5 text-green-600 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-5 h-5 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ color: '#10B981' }}>
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
-                  <span className="text-gray-700">Expense history and detailed records</span>
+                  <span style={{ color: '#334155' }}>Add photos of receipts and notes to expenses</span>
                 </li>
                 <li className="flex items-start space-x-3">
-                  <svg className="w-5 h-5 text-green-600 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-5 h-5 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ color: '#10B981' }}>
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
-                  <span className="text-gray-700">Settlement tracking and payment marking</span>
+                  <span style={{ color: '#334155' }}>Mark payments as complete when friends pay you back</span>
                 </li>
                 <li className="flex items-start space-x-3">
-                  <svg className="w-5 h-5 text-green-600 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-5 h-5 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ color: '#10B981' }}>
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
-                  <span className="text-gray-700">Secure user authentication and data encryption</span>
+                  <span style={{ color: '#334155' }}>Works offline - sync when you're back online</span>
                 </li>
               </ul>
             </div>
 
             <div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-4">📱 Platform Support</h3>
+              <h3 className="text-xl font-semibold mb-4" style={{ color: '#0F172A' }}>📱 Perfect for</h3>
               <ul className="space-y-3">
                 <li className="flex items-start space-x-3">
-                  <svg className="w-5 h-5 text-blue-600 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                  <svg className="w-5 h-5 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ color: '#14B8A6' }}>
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                   </svg>
-                  <span className="text-gray-700">Android (Google Play Store)</span>
+                  <span style={{ color: '#334155' }}>Roommates splitting rent, utilities, and groceries</span>
                 </li>
                 <li className="flex items-start space-x-3">
-                  <svg className="w-5 h-5 text-blue-600 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                  <svg className="w-5 h-5 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ color: '#14B8A6' }}>
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
-                  <span className="text-gray-700">iOS (App Store)</span>
+                  <span style={{ color: '#334155' }}>Friends dining out and splitting restaurant bills</span>
                 </li>
                 <li className="flex items-start space-x-3">
-                  <svg className="w-5 h-5 text-gray-400 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                  <svg className="w-5 h-5 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ color: '#14B8A6' }}>
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
-                  <span className="text-gray-500">Web version (coming soon)</span>
+                  <span style={{ color: '#334155' }}>Group trips with shared hotels, gas, and activities</span>
                 </li>
               </ul>
             </div>
           </div>
 
-          <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-6 mb-8">
-            <h3 className="text-xl font-semibold text-gray-900 mb-4">🎯 What Makes CoinBreakr Special</h3>
+          <div className="rounded-lg p-6 mb-8" style={{ backgroundColor: '#F0FDFA' }}>
+            <h3 className="text-xl font-semibold text-gray-900 mb-4">🎯 What Makes Splitlyr Special</h3>
             <div className="grid md:grid-cols-2 gap-6">
               <div>
                 <h4 className="font-semibold text-gray-900 mb-2">Simple & Intuitive</h4>
@@ -95,7 +95,7 @@ export default function Release() {
               </div>
               <div>
                 <h4 className="font-semibold text-gray-900 mb-2">Completely Free</h4>
-                <p className="text-gray-700 text-sm">No subscriptions, no premium features, no hidden costs. CoinBreakr is free for everyone, forever.</p>
+                <p className="text-gray-700 text-sm">No subscriptions, no premium features, no hidden costs. Splitlyr is free for everyone, forever.</p>
               </div>
               <div>
                 <h4 className="font-semibold text-gray-900 mb-2">Privacy First</h4>
@@ -110,21 +110,21 @@ export default function Release() {
 
           <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 mb-8">
             <h3 className="text-lg font-semibold text-yellow-800 mb-2">🚧 Coming Soon</h3>
-            <p className="text-yellow-700 mb-4">We're already working on exciting new features for future releases:</p>
+            <p className="text-yellow-700 mb-4">We're working on new features to make bill splitting even easier:</p>
             <ul className="text-yellow-700 space-y-1 text-sm">
-              <li>• Receipt photo scanning and automatic expense detection</li>
-              <li>• Integration with popular payment apps</li>
-              <li>• Expense categories and budgeting tools</li>
+              <li>• Scan receipts with your camera to automatically add expenses</li>
+              <li>• Integration with Venmo, PayPal, and other payment apps</li>
+              <li>• Expense categories (Food, Travel, Utilities, etc.)</li>
               <li>• Multi-currency support for international trips</li>
-              <li>• Advanced reporting and analytics</li>
-              <li>• Web dashboard for desktop users</li>
+              <li>• Monthly spending reports and insights</li>
+              <li>• Web version for managing expenses on desktop</li>
             </ul>
           </div>
 
           <div className="text-center">
             <h3 className="text-xl font-semibold text-gray-900 mb-4">Ready to Get Started?</h3>
             <p className="text-gray-600 mb-6">
-              Join thousands of users who are already splitting expenses the smart way with CoinBreakr.
+              Join thousands of users who are already splitting expenses the smart way with Splitlyr.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <a
@@ -157,18 +157,20 @@ export default function Release() {
           <h3 className="text-xl font-semibold text-gray-900 mb-4">📞 Support & Feedback</h3>
           <p className="text-gray-700 mb-4">
             We'd love to hear from you! Whether you have questions, feedback, or feature requests, 
-            our team is here to help make CoinBreakr even better.
+            our team is here to help make Splitlyr even better.
           </p>
           <div className="flex flex-col sm:flex-row gap-4">
             <a
               href="/contact"
-              className="inline-flex items-center bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium text-center"
+              className="inline-flex items-center text-white px-6 py-3 rounded-lg hover:opacity-90 transition-opacity font-medium text-center"
+              style={{ backgroundColor: '#14B8A6' }}
             >
               Contact Support
             </a>
             <a
               href="/faq"
-              className="inline-flex items-center border-2 border-gray-300 text-gray-700 px-6 py-3 rounded-lg hover:border-blue-600 hover:text-blue-600 transition-colors font-medium text-center"
+              className="border-hover inline-flex items-center border-2 px-6 py-3 rounded-lg transition-colors font-medium text-center"
+              style={{ borderColor: '#CBD5E1', color: '#334155' }}
             >
               View FAQ
             </a>

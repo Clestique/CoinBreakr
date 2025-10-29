@@ -3,7 +3,7 @@ export default function HowItWorks() {
     {
       step: "1",
       title: "Download & Setup",
-      description: "Get CoinBreakr from the app store and create your free account in seconds.",
+      description: "Get Splitlyr from the app store and create your free account in seconds.",
       icon: (
         <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
@@ -23,7 +23,7 @@ export default function HowItWorks() {
     {
       step: "3",
       title: "Split Expenses",
-      description: "Add shared expenses and let CoinBreakr automatically calculate who owes what to whom.",
+      description: "Add shared expenses and let Splitlyr automatically calculate who owes what to whom.",
       icon: (
         <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
@@ -43,14 +43,14 @@ export default function HowItWorks() {
   ]
 
   return (
-    <section id="how-it-works" className="py-20 bg-gray-50">
+    <section id="how-it-works" className="py-20" style={{ backgroundColor: '#F8FAFC' }}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
-          <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-            How CoinBreakr Works
+          <h2 className="text-3xl md:text-4xl font-bold mb-4" style={{ color: '#0F172A' }}>
+            How to Split Bills with Splitlyr
           </h2>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            Split expenses with friends and family in just a few simple steps.
+          <p className="text-xl max-w-3xl mx-auto" style={{ color: '#64748B' }}>
+            Split restaurant bills, rent, and group expenses in just a few simple steps.
           </p>
         </div>
 
@@ -58,77 +58,87 @@ export default function HowItWorks() {
           {steps.map((step, index) => (
             <div key={index} className="text-center">
               <div className="relative mb-8">
-                <div className="bg-blue-600 text-white w-16 h-16 rounded-full flex items-center justify-center text-2xl font-bold mx-auto mb-4">
+                <div className="text-white w-16 h-16 rounded-full flex items-center justify-center text-2xl font-bold mx-auto mb-4" style={{ backgroundColor: '#14B8A6' }}>
                   {step.step}
                 </div>
-                <div className="bg-blue-100 w-20 h-20 rounded-full flex items-center justify-center text-blue-600 mx-auto">
+                <div className="w-20 h-20 rounded-full flex items-center justify-center mx-auto" style={{ backgroundColor: '#F0FDFA', color: '#14B8A6' }}>
                   {step.icon}
                 </div>
                 {index < steps.length - 1 && (
-                  <div className="hidden lg:block absolute top-8 left-full w-full h-0.5 bg-blue-200 transform -translate-y-1/2"></div>
+                  <div className="hidden lg:block absolute top-8 left-full w-full h-0.5 transform -translate-y-1/2" style={{ backgroundColor: '#CCFBF1' }}></div>
                 )}
               </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-4">{step.title}</h3>
-              <p className="text-gray-600 leading-relaxed">{step.description}</p>
+              <h3 className="text-xl font-semibold mb-4" style={{ color: '#0F172A' }}>{step.title}</h3>
+              <p className="leading-relaxed" style={{ color: '#64748B' }}>{step.description}</p>
             </div>
           ))}
         </div>
 
-        <div className="mt-16 bg-white rounded-2xl p-8 shadow-lg">
+        <div className="mt-16 bg-white rounded-2xl p-8 shadow-lg relative z-10">
           <div className="grid lg:grid-cols-2 gap-8 items-center">
             <div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-4">
-                Why Choose CoinBreakr?
+              <h3 className="text-3xl font-bold text-gray-900 mb-8">
+                Why Choose Splitlyr?
               </h3>
-              <ul className="space-y-4">
-                <li className="flex items-start space-x-3">
-                  <svg className="w-6 h-6 text-green-600 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                  <span className="text-gray-700">Free to use with no hidden fees or subscriptions</span>
+              <ul className="space-y-6">
+                <li className="flex items-start space-x-4">
+                  <div className="flex-shrink-0 w-6 h-6 bg-green-100 rounded-full flex items-center justify-center mt-0.5">
+                    <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                  <span className="text-gray-800 font-semibold text-lg">Free to use with no hidden fees or subscriptions</span>
                 </li>
-                <li className="flex items-start space-x-3">
-                  <svg className="w-6 h-6 text-green-600 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                  <span className="text-gray-700">Smart expense splitting with automatic calculations</span>
+                <li className="flex items-start space-x-4">
+                  <div className="flex-shrink-0 w-6 h-6 bg-green-100 rounded-full flex items-center justify-center mt-0.5">
+                    <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                  <span className="text-gray-800 font-semibold text-lg">Smart expense splitting with automatic calculations</span>
                 </li>
-                <li className="flex items-start space-x-3">
-                  <svg className="w-6 h-6 text-green-600 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                  <span className="text-gray-700">Group expenses for trips, dinners, and shared living</span>
+                <li className="flex items-start space-x-4">
+                  <div className="flex-shrink-0 w-6 h-6 bg-green-100 rounded-full flex items-center justify-center mt-0.5">
+                    <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                  <span className="text-gray-800 font-semibold text-lg">Group expenses for trips, dinners, and shared living</span>
                 </li>
-                <li className="flex items-start space-x-3">
-                  <svg className="w-6 h-6 text-green-600 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                  <span className="text-gray-700">Secure data with privacy-focused design</span>
+                <li className="flex items-start space-x-4">
+                  <div className="flex-shrink-0 w-6 h-6 bg-green-100 rounded-full flex items-center justify-center mt-0.5">
+                    <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                  <span className="text-gray-800 font-semibold text-lg">Secure data with privacy-focused design</span>
                 </li>
-                <li className="flex items-start space-x-3">
-                  <svg className="w-6 h-6 text-green-600 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                  <span className="text-gray-700">Easy settlement tracking and payment reminders</span>
+                <li className="flex items-start space-x-4">
+                  <div className="flex-shrink-0 w-6 h-6 bg-green-100 rounded-full flex items-center justify-center mt-0.5">
+                    <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                  <span className="text-gray-800 font-semibold text-lg">Easy settlement tracking and payment reminders</span>
                 </li>
               </ul>
             </div>
-            <div className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-xl p-8">
+            <div className="rounded-xl p-8 relative z-10 border-2" style={{ background: 'linear-gradient(135deg, #F0FDFA 0%, #CCFBF1 100%)', borderColor: '#99F6E4' }}>
               <div className="text-center">
-                <div className="w-24 h-24 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-6">
-                  <svg className="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
-                  </svg>
-                </div>
-                <h4 className="text-xl font-semibold text-gray-900 mb-2">Ready to get started?</h4>
-                <p className="text-gray-600 mb-6">Join thousands of users already splitting expenses with CoinBreakr</p>
+                <img src="/adaptive-icon.png" alt="Splitlyr Logo" className="w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-6 shadow-xl" />
+                <h4 className="text-xl font-bold text-gray-900 mb-3">Ready to get started?</h4>
+                <p className="text-gray-700 mb-8 font-medium text-lg">Join thousands of users already splitting expenses with Splitlyr</p>
                 <a
                   href="#download"
-                  className="inline-flex items-center bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                  className="download-button inline-flex items-center text-white px-10 py-4 rounded-xl hover:shadow-xl transition-all duration-300 font-bold text-lg shadow-lg transform hover:scale-105"
+                  style={{
+                    background: 'linear-gradient(135deg, #14B8A6 0%, #0D9488 100%)',
+                    boxShadow: '0 10px 25px -5px rgba(20, 184, 166, 0.4)'
+                  }}
                 >
                   Download Now
-                  <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                  <svg className="w-6 h-6 ml-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" />
                   </svg>
                 </a>
               </div>

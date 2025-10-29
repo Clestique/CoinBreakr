@@ -1,14 +1,14 @@
 export default function Download() {
   return (
-    <section id="download" className="py-20 bg-gradient-to-r from-blue-600 to-purple-600">
+    <section id="download" className="py-20" style={{ backgroundColor: '#14B8A6' }}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center">
           <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
-            Start Splitting Expenses Today
+            Download Splitlyr - Free Bill Splitting App
           </h2>
-          <p className="text-xl text-blue-100 mb-8 max-w-3xl mx-auto">
-            Download CoinBreakr and never worry about who owes what again. 
-            Free to use, secure, and designed to make expense splitting effortless.
+          <p className="text-xl mb-8 max-w-3xl mx-auto" style={{ color: '#CCFBF1' }}>
+            Split restaurant bills, rent, groceries, and group expenses with friends. 
+            Track who owes what and settle up easily. Completely free to use.
           </p>
           
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12">
@@ -45,16 +45,16 @@ export default function Download() {
 
           <div className="grid md:grid-cols-3 gap-8 text-white">
             <div className="text-center">
-              <div className="text-3xl font-bold mb-2">50,000+</div>
-              <div className="text-blue-100">Expenses Split</div>
+              <div className="text-3xl font-bold mb-2">25,000+</div>
+              <div style={{ color: '#CCFBF1' }}>Bills Split</div>
             </div>
             <div className="text-center">
-              <div className="text-3xl font-bold mb-2">10,000+</div>
-              <div className="text-blue-100">Active Users</div>
+              <div className="text-3xl font-bold mb-2">5,000+</div>
+              <div style={{ color: '#CCFBF1' }}>Happy Users</div>
             </div>
             <div className="text-center">
-              <div className="text-3xl font-bold mb-2">4.8★</div>
-              <div className="text-blue-100">App Store Rating</div>
+              <div className="text-3xl font-bold mb-2">4.9★</div>
+              <div style={{ color: '#CCFBF1' }}>User Rating</div>
             </div>
           </div>
         </div>

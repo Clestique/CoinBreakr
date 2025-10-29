@@ -7,22 +7,22 @@ import Footer from '@/components/Footer'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'CoinBreakr - Smart Expense Splitting App',
-  description: 'Split expenses with friends and family effortlessly. Track shared costs, settle debts, and manage group expenses. Download CoinBreakr for free.',
+  title: 'Splitlyr - Smart Expense Splitting App',
+  description: 'Split expenses with friends and family effortlessly. Track shared costs, settle debts, and manage group expenses. Download Splitlyr for free.',
   keywords: 'expense splitting, bill splitting, shared expenses, group expenses, expense tracker, split bills, settle debts, expense sharing app',
-  authors: [{ name: 'CoinBreakr Team' }],
-  creator: 'CoinBreakr',
-  publisher: 'CoinBreakr',
+  authors: [{ name: 'Splitlyr Team' }],
+  creator: 'Splitlyr',
+  publisher: 'Splitlyr',
   openGraph: {
-    title: 'CoinBreakr - Smart Expense Splitting App',
+    title: 'Splitlyr - Smart Expense Splitting App',
     description: 'Split expenses with friends and family effortlessly. Track shared costs, settle debts, and manage group expenses.',
-    url: 'https://coinbreakr.com',
-    siteName: 'CoinBreakr',
+    url: 'https://splitlyr.clestiq.com',
+    siteName: 'Splitlyr',
     type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'CoinBreakr - Smart Expense Splitting App',
+    title: 'Splitlyr - Smart Expense Splitting App',
     description: 'Split expenses with friends and family effortlessly. Track shared costs, settle debts, and manage group expenses.',
   },
   robots: {
