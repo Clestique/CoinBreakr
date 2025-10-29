@@ -616,7 +616,7 @@ const styles = StyleSheet.create({
   },
   leaveButtonText: {
     fontSize: 12,
-    color: '#FFFFFF',
+    color: colors.background.primary,
     fontWeight: '600',
   },
   actionButton: {

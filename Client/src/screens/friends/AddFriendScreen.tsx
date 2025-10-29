@@ -317,7 +317,7 @@ const AddFriendScreen: React.FC = () => {
               {/* App Users Results */}
               {filteredAppUsers.length > 0 && (
                 <View style={styles.section}>
-                  <Text style={styles.sectionTitle}>CoinBreakr Users</Text>
+                  <Text style={styles.sectionTitle}>Splitlyr Users</Text>
                   {filteredAppUsers.map((user, index) => (
                     <TouchableOpacity
                       key={user._id}

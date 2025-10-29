@@ -194,7 +194,7 @@ const FriendsScreen: React.FC = () => {
                   style={styles.addNewFriendButton}
                   onPress={navigateToAddFriend}
                 >
-                  <Ionicons name="person-add-outline" size={18} color="#FFFFFF" />
+                  <Ionicons name="person-add-outline" size={18} color={colors.background.primary} />
                   <Text style={styles.addNewFriendText}>Add new friend</Text>
                 </TouchableOpacity>
               </View>
@@ -251,7 +251,7 @@ const FriendsScreen: React.FC = () => {
                 style={styles.fabOption}
                 onPress={navigateToAddFriend}
               >
-                <Ionicons name="person-add" size={20} color="#FFFFFF" />
+                <Ionicons name="person-add" size={20} color={colors.background.primary} />
               </TouchableOpacity>
             </View>
 
@@ -262,7 +262,7 @@ const FriendsScreen: React.FC = () => {
                   style={styles.fabOption}
                   onPress={handleAddExpense}
                 >
-                  <Ionicons name="add" size={20} color="#FFFFFF" />
+                  <Ionicons name="add" size={20} color={colors.background.primary} />
                 </TouchableOpacity>
               </View>
             )}
@@ -277,7 +277,7 @@ const FriendsScreen: React.FC = () => {
           <Ionicons
             name={showFabOptions ? "close" : "add"}
             size={28}
-            color="#FFFFFF"
+            color={colors.background.primary}
           />
         </TouchableOpacity>
       </View>
@@ -360,7 +360,7 @@ const styles = StyleSheet.create({
   },
   pendingBadge: {
     fontSize: 12,
-    color: '#FF9500',
+    color: colors.warning,
     fontWeight: '500',
   },
   addNewFriendContainer: {

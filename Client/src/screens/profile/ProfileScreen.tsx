@@ -313,7 +313,7 @@ const ProfileScreen: React.FC = () => {
                 />
                 {isEditing && (
                   <View style={styles.imageOverlay}>
-                    <Ionicons name="camera" size={20} color="#FFFFFF" />
+                    <Ionicons name="camera" size={20} color={colors.background.primary} />
                   </View>
                 )}
               </TouchableOpacity>
@@ -379,7 +379,7 @@ const ProfileScreen: React.FC = () => {
                 disabled={saving}
               >
                 {saving ? (
-                  <ActivityIndicator color="#FFFFFF" size="small" />
+                  <ActivityIndicator color={colors.background.primary} size="small" />
                 ) : (
                   <Text style={styles.actionButtonText}>Save Details</Text>
                 )}
@@ -454,7 +454,7 @@ const ProfileScreen: React.FC = () => {
                   disabled={changingPassword || !passwordForm.currentPassword.trim() || !passwordForm.newPassword.trim()}
                 >
                   {changingPassword ? (
-                    <ActivityIndicator color="#FFFFFF" size="small" />
+                    <ActivityIndicator color={colors.background.primary} size="small" />
                   ) : (
                     <Text style={styles.actionButtonText}>Update</Text>
                   )}
@@ -667,7 +667,7 @@ const styles = StyleSheet.create({
   actionButtonText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#FFFFFF',
+    color: colors.background.primary,
   },
   cancelButtonText: {
     color: colors.text.primary,
@@ -764,7 +764,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   retryButtonText: {
-    color: '#FFFFFF',
+    color: colors.background.primary,
     fontSize: 16,
     fontWeight: '600',
   },

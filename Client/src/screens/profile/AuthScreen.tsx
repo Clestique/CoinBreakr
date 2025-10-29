@@ -8,10 +8,11 @@ import {
   TextInput,
   Alert,
   ActivityIndicator,
+  Image,
 } from 'react-native';
 import { authService, LoginRequest, RegisterRequest } from '../../services/auth';
 import { authStorage } from '../../services/authStorage';
-import colors from '../../theme/colors';
+import { colors } from '../../theme/colors';
 
 interface AuthScreenProps {
   navigation: any;
@@ -66,7 +67,7 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
       // Store the token and user ID from auth response
       await authStorage.setToken(authData.token);
       await authStorage.setUserId(authData.user.id.toString());
-      
+
       // Navigate to Main tab navigator after successful auth
       navigation.reset({ index: 0, routes: [{ name: 'Main' }] });
     } catch (error: any) {
@@ -106,8 +107,12 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
         <View style={styles.header}>
-          <Text style={styles.logo}>💰</Text>
-          <Text style={styles.title}>CoinBreakr</Text>
+          <Image
+            source={require('../../../assets/adaptive-icon.png')}
+            style={styles.logo}
+            resizeMode="contain"
+          />
+          <Text style={styles.title}>Splitlyr</Text>
           <Text style={styles.subtitle}>
             {isLogin ? 'Welcome back!' : 'Create your account'}
           </Text>
@@ -129,7 +134,7 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
                   if (errors.name) setErrors({ ...errors, name: undefined });
                 }}
                 placeholder="Enter your full name"
-                placeholderTextColor="#9CA3AF"
+                placeholderTextColor={colors.text.quaternary}
                 returnKeyType="next"
                 onSubmitEditing={() => emailInputRef.current?.focus()}
               />
@@ -151,7 +156,7 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
                 if (errors.email) setErrors({ ...errors, email: undefined });
               }}
               placeholder="Enter your email"
-              placeholderTextColor="#9CA3AF"
+              placeholderTextColor={colors.text.quaternary}
               keyboardType="email-address"
               autoCapitalize="none"
               returnKeyType="next"
@@ -174,7 +179,7 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
                 if (errors.password) setErrors({ ...errors, password: undefined });
               }}
               placeholder="Enter your password"
-              placeholderTextColor="#9CA3AF"
+              placeholderTextColor={colors.text.quaternary}
               secureTextEntry
               returnKeyType="done"
               onSubmitEditing={handleAuth}
@@ -186,13 +191,13 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
             <Text style={styles.formErrorText}>{errors.form}</Text>
           ) : null}
 
-          <TouchableOpacity 
-            style={[styles.authButton, isLoading && styles.authButtonDisabled]} 
+          <TouchableOpacity
+            style={[styles.authButton, isLoading && styles.authButtonDisabled]}
             onPress={handleAuth}
             disabled={isLoading}
           >
             {isLoading ? (
-              <ActivityIndicator color="#FFFFFF" size="small" />
+              <ActivityIndicator color={colors.background.primary} size="small" />
             ) : (
               <Text style={styles.authButtonText}>
                 {isLogin ? 'Sign In' : 'Sign Up'}
@@ -231,18 +236,19 @@ const styles = StyleSheet.create({
     marginBottom: 40,
   },
   logo: {
-    fontSize: 60,
+    width: 80,
+    height: 80,
     marginBottom: 16,
   },
   title: {
     fontSize: 32,
     fontWeight: '700',
-    color: '#1A1A1A',
+    color: colors.text.primary,
     marginBottom: 8,
   },
   subtitle: {
     fontSize: 18,
-    color: '#6B7280',
+    color: colors.text.secondary,
     textAlign: 'center',
   },
   form: {
@@ -254,21 +260,21 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#374151',
+    color: colors.text.secondary,
     marginBottom: 8,
   },
   input: {
     borderWidth: 1,
-    borderColor: '#D1D5DB',
+    borderColor: colors.border.medium,
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 14,
     fontSize: 16,
-    color: '#1A1A1A',
-    backgroundColor: '#FFFFFF',
+    color: colors.text.primary,
+    backgroundColor: colors.background.primary,
   },
   inputError: {
-    borderColor: '#DC2626',
+    borderColor: colors.error,
   },
   authButton: {
     backgroundColor: colors.primary[600],
@@ -284,11 +290,11 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   authButtonDisabled: {
-    backgroundColor: '#9CA3AF',
+    backgroundColor: colors.text.quaternary,
     opacity: 0.7,
   },
   authButtonText: {
-    color: '#FFFFFF',
+    color: colors.background.primary,
     fontSize: 16,
     fontWeight: '600',
   },
@@ -302,12 +308,12 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   errorText: {
-    color: '#DC2626',
+    color: colors.error,
     fontSize: 13,
     marginTop: 6,
   },
   formErrorText: {
-    color: '#DC2626',
+    color: colors.error,
     fontSize: 14,
     marginTop: 8,
     textAlign: 'center',

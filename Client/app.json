@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "Deleno",
-    "slug": "deleno",
+    "name": "Splitlyr",
+    "slug": "splitlyr",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -18,7 +18,7 @@
         "backgroundColor": "#F8FAFC"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.clestiq.deleno.app",
+      "package": "com.clestiq.splitlyr.app",
       "predictiveBackGestureEnabled": false,
       "versionCode": 1,
       "permissions": [

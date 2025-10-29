@@ -337,7 +337,7 @@ const AddGroupMembersScreen: React.FC<AddGroupMembersScreenProps> = ({ navigatio
             disabled={addingMembers}
           >
             {addingMembers ? (
-              <ActivityIndicator size="small" color="#FFFFFF" />
+              <ActivityIndicator size="small" color={colors.background.primary} />
             ) : (
               <Text style={styles.addButtonText}>
                 Add Members ({selectedMembers.length})
@@ -508,7 +508,7 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   addButtonText: {
-    color: '#FFFFFF',
+    color: colors.background.primary,
     fontSize: 16,
     fontWeight: '600',
   },

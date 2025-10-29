@@ -1,7 +1,7 @@
 # DNS Zone for beleno.clestiq.com
 resource "google_dns_managed_zone" "beleno_zone" {
   name        = "${var.environment}-beleno-zone"
-  dns_name    = "beleno.clestiq.com."
+  dns_name    = "splitlyr.clestiq.com."
   description = "DNS zone for beleno.clestiq.com - ${var.environment} environment"
 
   depends_on = [google_project_service.dns_api]
@@ -11,7 +11,7 @@ resource "google_dns_managed_zone" "beleno_zone" {
 resource "google_dns_record_set" "api_record" {
   count = var.environment == "main" ? 1 : 0
 
-  name         = "api.beleno.clestiq.com."
+  name         = "api.splitlyr.clestiq.com."
   managed_zone = google_dns_managed_zone.beleno_zone.name
   type         = "A"
   ttl          = 300
@@ -22,7 +22,7 @@ resource "google_dns_record_set" "api_record" {
 resource "google_dns_record_set" "staging_record" {
   count = var.environment == "staging" ? 1 : 0
 
-  name         = "staging.beleno.clestiq.com."
+  name         = "staging.splitlyr.clestiq.com."
   managed_zone = google_dns_managed_zone.beleno_zone.name
   type         = "A"
   ttl          = 300

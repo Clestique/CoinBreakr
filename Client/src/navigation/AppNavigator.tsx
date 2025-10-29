@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, Image } from 'react-native';
 
 import { OnboardingScreen1, OnboardingScreen2, OnboardingScreen3, OnboardingScreen4 } from '../screens/onboarding';
 import { AuthScreen } from '../screens/profile';
@@ -15,8 +15,12 @@ const Stack = createStackNavigator();
 
 const LoadingScreen: React.FC = () => (
   <View style={styles.loadingContainer}>
-    <Text style={styles.loadingText}>💰</Text>
-    <Text style={styles.loadingTitle}>CoinBreakr</Text>
+    <Image
+      source={require('../../assets/adaptive-icon.png')}
+      style={styles.loadingIcon}
+      resizeMode="contain"
+    />
+    <Text style={styles.loadingTitle}>Splitlyr</Text>
   </View>
 );
 
@@ -61,8 +65,8 @@ const AppNavigator: React.FC = () => {
         <Stack.Screen name="Onboarding1" component={OnboardingScreen1} />
         <Stack.Screen name="Onboarding2" component={OnboardingScreen2} />
         <Stack.Screen name="Onboarding3" component={OnboardingScreen3} />
-        <Stack.Screen 
-          name="Onboarding4" 
+        <Stack.Screen
+          name="Onboarding4"
           component={OnboardingScreen4}
           listeners={{
             beforeRemove: () => {
@@ -89,8 +93,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: colors.background.body,
   },
-  loadingText: {
-    fontSize: 60,
+  loadingIcon: {
+    width: 80,
+    height: 80,
     marginBottom: 16,
   },
   loadingTitle: {

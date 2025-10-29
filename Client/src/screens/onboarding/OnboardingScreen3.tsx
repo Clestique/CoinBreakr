@@ -6,6 +6,7 @@ import {
   SafeAreaView,
   TouchableOpacity,
 } from 'react-native';
+import { colors } from '../../theme/colors';
 
 interface OnboardingScreen3Props {
   navigation: any;
@@ -84,7 +85,7 @@ const OnboardingScreen3: React.FC<OnboardingScreen3Props> = ({ navigation }) => 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.background.primary,
   },
   content: {
     flex: 1,
@@ -94,13 +95,13 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontWeight: '700',
-    color: '#1A1A1A',
+    color: colors.text.primary,
     textAlign: 'center',
     marginBottom: 16,
   },
   subtitle: {
     fontSize: 18,
-    color: '#6B7280',
+    color: colors.text.secondary,
     textAlign: 'center',
     marginBottom: 40,
     lineHeight: 24,
@@ -118,7 +119,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#059669',
+    backgroundColor: colors.primary[500],
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 16,
@@ -126,7 +127,7 @@ const styles = StyleSheet.create({
   stepNumberText: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#FFFFFF',
+    color: colors.background.primary,
   },
   stepContent: {
     flex: 1,
@@ -135,12 +136,12 @@ const styles = StyleSheet.create({
   stepTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#1A1A1A',
+    color: colors.text.primary,
     marginBottom: 8,
   },
   stepDescription: {
     fontSize: 16,
-    color: '#4B5563',
+    color: colors.text.tertiary,
     lineHeight: 22,
   },
   footer: {
@@ -156,11 +157,11 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: '#E5E7EB',
+    backgroundColor: colors.border.medium,
     marginHorizontal: 4,
   },
   activeDot: {
-    backgroundColor: '#059669',
+    backgroundColor: colors.primary[500],
   },
   buttonContainer: {
     flexDirection: 'row',
@@ -172,23 +173,23 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignItems: 'center',
     marginRight: 12,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: colors.background.tertiary,
   },
   backButtonText: {
-    color: '#6B7280',
+    color: colors.text.secondary,
     fontSize: 16,
     fontWeight: '600',
   },
   nextButton: {
     flex: 1,
-    backgroundColor: '#059669',
+    backgroundColor: colors.primary[500],
     paddingVertical: 16,
     borderRadius: 12,
     alignItems: 'center',
     marginLeft: 12,
   },
   nextButtonText: {
-    color: '#FFFFFF',
+    color: colors.background.primary,
     fontSize: 16,
     fontWeight: '600',
   },

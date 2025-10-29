@@ -301,7 +301,7 @@ const FriendExpenseScreen: React.FC = () => {
         <Text style={styles.balanceLabel}>Overall Balance</Text>
         <Text style={[
           styles.balanceAmount,
-          { color: totalBalance === 0 ? colors.text.tertiary : totalBalance > 0 ? '#10B981' : '#EF4444' }
+          { color: totalBalance === 0 ? colors.text.tertiary : totalBalance > 0 ? colors.success : colors.error }
         ]}>
           {totalBalance === 0
             ? 'All settled up!'
@@ -373,7 +373,7 @@ const FriendExpenseScreen: React.FC = () => {
                           <Text style={styles.expenseTitle}>{expense.title}</Text>
                           {expense.group && (
                             <View style={styles.groupBadge}>
-                              <Ionicons name="people" size={14} color="#FFFFFF" />
+                              <Ionicons name="people" size={14} color={colors.background.primary} />
                             </View>
                           )}
                         </View>
@@ -391,7 +391,7 @@ const FriendExpenseScreen: React.FC = () => {
                         <Text style={[
                           styles.expenseStatus,
                           {
-                            color: status === 'friend_owes' ? '#10B981' : '#EF4444'
+                            color: status === 'friend_owes' ? colors.success : colors.error
                           }
                         ]}>
                           {status === 'friend_owes'
@@ -435,7 +435,7 @@ const FriendExpenseScreen: React.FC = () => {
         }}
       >
         <View style={styles.fabContent}>
-          <Ionicons name="add" size={20} color="#FFFFFF" />
+          <Ionicons name="add" size={20} color={colors.background.primary} />
           <Text style={styles.fabText}>Add Expense</Text>
         </View>
       </TouchableOpacity>
@@ -522,7 +522,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 4,
   },
   actionButtonText: {
-    color: '#FFFFFF',
+    color: colors.background.primary,
     fontSize: 14,
     fontWeight: '600',
   },
@@ -649,7 +649,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     elevation: 8,
-    shadowColor: '#000',
+    shadowColor: colors.gray[900],
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
@@ -659,7 +659,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   fabText: {
-    color: '#FFFFFF',
+    color: colors.background.primary,
     fontSize: 14,
     fontWeight: '600',
     marginLeft: 8,

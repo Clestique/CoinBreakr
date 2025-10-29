@@ -5,7 +5,9 @@ import {
   StyleSheet,
   SafeAreaView,
   TouchableOpacity,
+  Image,
 } from 'react-native';
+import { colors } from '../../theme/colors';
 
 interface OnboardingScreen4Props {
   navigation: any;
@@ -16,7 +18,11 @@ const OnboardingScreen4: React.FC<OnboardingScreen4Props> = ({ navigation }) => 
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
         <View style={styles.iconContainer}>
-          <Text style={styles.icon}>🚀</Text>
+          <Image 
+            source={require('../../../assets/adaptive-icon.png')} 
+            style={styles.icon}
+            resizeMode="contain"
+          />
         </View>
         
         <Text style={styles.title}>Ready to Get Started?</Text>
@@ -71,7 +77,7 @@ const OnboardingScreen4: React.FC<OnboardingScreen4Props> = ({ navigation }) => 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.background.primary,
   },
   content: {
     flex: 1,
@@ -83,24 +89,25 @@ const styles = StyleSheet.create({
     width: 120,
     height: 120,
     borderRadius: 60,
-    backgroundColor: '#F8F9FA',
+    backgroundColor: colors.background.tertiary,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 40,
   },
   icon: {
-    fontSize: 60,
+    width: 60,
+    height: 60,
   },
   title: {
     fontSize: 28,
     fontWeight: '700',
-    color: '#1A1A1A',
+    color: colors.text.primary,
     textAlign: 'center',
     marginBottom: 16,
   },
   subtitle: {
     fontSize: 18,
-    color: '#6B7280',
+    color: colors.text.secondary,
     textAlign: 'center',
     marginBottom: 40,
     lineHeight: 24,
@@ -122,7 +129,7 @@ const styles = StyleSheet.create({
   },
   benefitText: {
     fontSize: 16,
-    color: '#4B5563',
+    color: colors.text.tertiary,
     fontWeight: '500',
   },
   footer: {
@@ -138,11 +145,11 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: '#E5E7EB',
+    backgroundColor: colors.border.medium,
     marginHorizontal: 4,
   },
   activeDot: {
-    backgroundColor: '#059669',
+    backgroundColor: colors.primary[500],
   },
   buttonContainer: {
     flexDirection: 'row',
@@ -154,23 +161,23 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignItems: 'center',
     marginRight: 12,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: colors.background.tertiary,
   },
   backButtonText: {
-    color: '#6B7280',
+    color: colors.text.secondary,
     fontSize: 16,
     fontWeight: '600',
   },
   getStartedButton: {
     flex: 1,
-    backgroundColor: '#059669',
+    backgroundColor: colors.primary[500],
     paddingVertical: 16,
     borderRadius: 12,
     alignItems: 'center',
     marginLeft: 12,
   },
   getStartedButtonText: {
-    color: '#FFFFFF',
+    color: colors.background.primary,
     fontSize: 16,
     fontWeight: '600',
   },

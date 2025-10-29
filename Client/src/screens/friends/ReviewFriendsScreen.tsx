@@ -186,7 +186,7 @@ const ReviewFriendsScreen: React.FC = () => {
   const sendSMS = async (friend: LocalPendingFriend, shouldNavigate: boolean = true) => {
     console.log('Attempting to send SMS to:', friend.phoneNumber);
 
-    const message = `Hi ${friend.name}! I've added you to CoinBreakr, a great app for splitting expenses with friends. Download it to easily manage shared costs: https://coinbreakr.app`;
+    const message = `Hi ${friend.name}! I've added you to Splitlyr, a great app for splitting expenses with friends. Download it to easily manage shared costs: https://splitlyr.app`;
 
     // Different URL formats for different platforms
     let url: string;
@@ -313,7 +313,7 @@ const ReviewFriendsScreen: React.FC = () => {
                       {friend.email || friend.phoneNumber || 'No contact info'}
                     </Text>
                     <Text style={styles.friendType}>
-                      {friend.type === 'appUser' ? 'CoinBreakr User' :
+                      {friend.type === 'appUser' ? 'Splitlyr User' :
                         friend.type === 'contact' ? 'From Contacts' : 'Manual Entry'}
                     </Text>
                   </View>
@@ -364,7 +364,7 @@ const ReviewFriendsScreen: React.FC = () => {
               disabled={isAdding}
             >
               {isAdding ? (
-                <ActivityIndicator color="#FFFFFF" />
+                <ActivityIndicator color={colors.background.primary} />
               ) : (
                 <Text style={styles.addButtonText}>
                   Add Friends ({pendingFriends.length})
@@ -561,7 +561,7 @@ const styles = StyleSheet.create({
   addButtonText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#FFFFFF',
+    color: colors.background.primary,
   },
 });
 
