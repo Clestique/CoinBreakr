@@ -138,11 +138,36 @@ else
 fi
 
 # -----------------------------------------------------------------------------
-# 9. Verify Service Configuration
+# 9. Install startup service
+# -----------------------------------------------------------------------------
+STARTUP_SERVICE_NAME="coinbreakr-startup"
+STARTUP_SERVICE_FILE_SRC="/opt/coinbreakr/scripts/${STARTUP_SERVICE_NAME}.service"
+STARTUP_SERVICE_FILE_DST="/etc/systemd/system/${STARTUP_SERVICE_NAME}.service"
+
+if [ -f "${STARTUP_SERVICE_FILE_SRC}" ]; then
+  echo "📥 Installing startup service ${STARTUP_SERVICE_FILE_DST}..."
+  cp "${STARTUP_SERVICE_FILE_SRC}" "${STARTUP_SERVICE_FILE_DST}"
+  chmod 644 "${STARTUP_SERVICE_FILE_DST}"
+  chmod +x "/opt/coinbreakr/scripts/startup.sh"
+  systemctl daemon-reload
+  systemctl enable "${STARTUP_SERVICE_NAME}.service"
+  echo "✅ Startup service installed"
+else
+  echo "⚠️  Startup service ${STARTUP_SERVICE_FILE_SRC} not found"
+fi
+
+# -----------------------------------------------------------------------------
+# 10. Verify Service Configuration
 # -----------------------------------------------------------------------------
 echo "🔍 Verifying service configuration..."
 if systemctl is-enabled ${SERVICE_NAME}.service >/dev/null 2>&1; then
-  echo "✅ Service is enabled for auto-start"
+  echo "✅ Main service is enabled for auto-start"
 else
-  echo "⚠️  Service may not be enabled properly"
+  echo "⚠️  Main service may not be enabled properly"
+fi
+
+if systemctl is-enabled ${STARTUP_SERVICE_NAME}.service >/dev/null 2>&1; then
+  echo "✅ Startup service is enabled for auto-start"
+else
+  echo "⚠️  Startup service may not be enabled properly"
 fi

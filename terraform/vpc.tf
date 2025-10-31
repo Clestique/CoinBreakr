@@ -112,6 +112,10 @@ resource "google_compute_instance" "vm_instance" {
 
   tags = ["coinbreakr-vm"]
 
+  metadata = {
+    environment = var.environment
+  }
+
   service_account {
     scopes = ["cloud-platform"]
   }

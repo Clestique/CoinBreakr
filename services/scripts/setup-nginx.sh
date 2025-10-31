@@ -38,31 +38,12 @@ echo "📝 Configuring nginx..."
 # Copy main nginx config
 cp /opt/coinbreakr/config/nginx.conf /etc/nginx/nginx.conf
 
-# Copy site configuration
+# Copy site configurations
 cp "/opt/coinbreakr/config/${DOMAIN}" "${NGINX_SITES_AVAILABLE}/${DOMAIN}"
+cp "/opt/coinbreakr/config/http-only.conf" "${NGINX_SITES_AVAILABLE}/http-only"
 
-# Create temporary HTTP-only config for initial SSL setup
-cat > "${NGINX_SITES_AVAILABLE}/${DOMAIN}.temp" << EOF
-server {
-    listen 80;
-    server_name ${DOMAIN};
-    
-    location /.well-known/acme-challenge/ {
-        root /var/www/html;
-    }
-    
-    location / {
-        proxy_pass http://localhost:3000/v1;
-        proxy_set_header Host \$host;
-        proxy_set_header X-Real-IP \$remote_addr;
-        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto \$scheme;
-    }
-}
-EOF
-
-# Enable temporary site
-ln -sf "${NGINX_SITES_AVAILABLE}/${DOMAIN}.temp" "${NGINX_SITES_ENABLED}/${DOMAIN}"
+# Enable HTTP-only configuration initially (no SSL during image build)
+ln -sf "${NGINX_SITES_AVAILABLE}/http-only" "${NGINX_SITES_ENABLED}/default-site"
 
 # Remove default nginx site
 rm -f "${NGINX_SITES_ENABLED}/default"
@@ -77,12 +58,43 @@ systemctl start nginx
 echo "✅ Nginx configured and started"
 
 # -----------------------------------------------------------------------------
-# 3. Obtain SSL certificate
+# 3. Setup SSL certificate service (to run after deployment)
 # -----------------------------------------------------------------------------
+echo "🔐 Setting up SSL certificate service..."
+
+# Create SSL setup script that will run after deployment
+cat > /opt/coinbreakr/scripts/setup-ssl.sh << 'EOF'
+#!/bin/bash
+# SSL setup script - runs after DNS is configured
+
+set -euo pipefail
+
+# Determine domain based on environment
+if [ -f "/opt/coinbreakr/.env" ]; then
+    source /opt/coinbreakr/.env
+fi
+
+if [ "${ENVIRONMENT:-main}" = "staging" ]; then
+    DOMAIN="staging.splitlyr.clestiq.com"
+else
+    DOMAIN="api.splitlyr.clestiq.com"
+fi
+
+EMAIL="admin@clestiq.com"
+NGINX_SITES_AVAILABLE="/etc/nginx/sites-available"
+NGINX_SITES_ENABLED="/etc/nginx/sites-enabled"
+
 echo "🔐 Obtaining SSL certificate for ${DOMAIN}..."
 
-# Wait a moment for nginx to fully start
-sleep 5
+# Check if domain resolves to this server
+SERVER_IP=$(curl -s ifconfig.me)
+DOMAIN_IP=$(dig +short ${DOMAIN} | tail -n1)
+
+if [ "$SERVER_IP" != "$DOMAIN_IP" ]; then
+    echo "⚠️  Domain ${DOMAIN} does not resolve to this server yet (${SERVER_IP} != ${DOMAIN_IP})"
+    echo "⚠️  Waiting 60 seconds for DNS propagation..."
+    sleep 60
+fi
 
 # Obtain SSL certificate
 certbot certonly \
@@ -97,11 +109,8 @@ certbot certonly \
 if [ $? -eq 0 ]; then
     echo "✅ SSL certificate obtained successfully"
     
-    # Now switch to the full HTTPS configuration
+    # Switch to the full HTTPS configuration
     ln -sf "${NGINX_SITES_AVAILABLE}/${DOMAIN}" "${NGINX_SITES_ENABLED}/${DOMAIN}"
-    
-    # Remove temporary config
-    rm -f "${NGINX_SITES_AVAILABLE}/${DOMAIN}.temp"
     
     # Test configuration
     nginx -t
@@ -110,10 +119,40 @@ if [ $? -eq 0 ]; then
     systemctl reload nginx
     
     echo "✅ HTTPS configuration activated"
+    
+    # Remove this script from startup
+    systemctl disable ssl-setup.service || true
 else
     echo "❌ Failed to obtain SSL certificate"
-    echo "⚠️  Continuing with HTTP-only configuration"
+    echo "⚠️  Will retry on next boot"
 fi
+EOF
+
+chmod +x /opt/coinbreakr/scripts/setup-ssl.sh
+
+# Create systemd service for SSL setup
+cat > /etc/systemd/system/ssl-setup.service << EOF
+[Unit]
+Description=Setup SSL certificates for nginx
+After=network-online.target nginx.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/opt/coinbreakr/scripts/setup-ssl.sh
+RemainAfterExit=yes
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+# Enable the SSL setup service
+systemctl daemon-reload
+systemctl enable ssl-setup.service
+
+echo "✅ SSL setup service configured to run after deployment"
 
 # -----------------------------------------------------------------------------
 # 4. Set up automatic certificate renewal

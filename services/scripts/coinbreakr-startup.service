@@ -1,0 +1,14 @@
+[Unit]
+Description=Coinbreakr VM Startup Configuration
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/opt/coinbreakr/scripts/startup.sh
+RemainAfterExit=yes
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
