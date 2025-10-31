@@ -58,3 +58,8 @@ variable "app_port" {
   description = "Application port"
   type        = number
 }
+
+variable "dns_zone_name" {
+  description = "Name of the existing DNS managed zone"
+  type        = string
+}

@@ -127,7 +127,18 @@ fi
 echo "✅ Service installed"
 
 # -----------------------------------------------------------------------------
-# 8. Verify Service Configuration
+# 8. Setup Nginx Reverse Proxy with SSL
+# -----------------------------------------------------------------------------
+echo "🌐 Setting up nginx reverse proxy..."
+if [ -f "/opt/coinbreakr/scripts/setup-nginx.sh" ]; then
+  chmod +x "/opt/coinbreakr/scripts/setup-nginx.sh"
+  "/opt/coinbreakr/scripts/setup-nginx.sh"
+else
+  echo "⚠️  Nginx setup script not found, skipping nginx configuration"
+fi
+
+# -----------------------------------------------------------------------------
+# 9. Verify Service Configuration
 # -----------------------------------------------------------------------------
 echo "🔍 Verifying service configuration..."
 if systemctl is-enabled ${SERVICE_NAME}.service >/dev/null 2>&1; then
