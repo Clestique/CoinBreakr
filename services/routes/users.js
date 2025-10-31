@@ -10,7 +10,8 @@ const {
   getFriends,
   getBalanceWithFriend,
   getAllBalances,
-  changePassword
+  changePassword,
+  deactivateUserData
 } = require('../controllers/userController');
 
 // Get user profile
@@ -39,5 +40,8 @@ router.get('/friends/:friendId/balance', authenticateToken, getBalanceWithFriend
 
 // Get all balances
 router.get('/balances', authenticateToken, getAllBalances);
+
+// Delete all user data
+router.delete('/deactivate-user', authenticateToken, deactivateUserData);
 
 module.exports = router;

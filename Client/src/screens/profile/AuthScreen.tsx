@@ -74,6 +74,17 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
       console.error('Auth error:', error);
       // Normalize ApiErrorResponse shape coming from authService
       const apiError: any = error && error.success === false ? error : null;
+
+      // Handle deactivated account specifically
+      if (apiError && (apiError.code === 'ACCOUNT_DEACTIVATED' || apiError.message?.includes('deactivated'))) {
+        Alert.alert(
+          'Account Deactivated',
+          'Your account has been deactivated. Please email support@splitlyr.com to reactivate your account.',
+          [{ text: 'OK' }]
+        );
+        return;
+      }
+
       if (apiError && apiError.errors) {
         const fieldErrors: { email?: string; password?: string; name?: string; form?: string } = {};
         if (apiError.errors.email && apiError.errors.email.length) {
@@ -145,6 +156,7 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
           <View style={styles.inputContainer}>
             <Text style={styles.label}>Email</Text>
             <TextInput
+              testID="emailInput"
               ref={emailInputRef}
               style={[
                 styles.input,
@@ -168,6 +180,7 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
           <View style={styles.inputContainer}>
             <Text style={styles.label}>Password</Text>
             <TextInput
+              testID="passwordInput"
               ref={passwordInputRef}
               style={[
                 styles.input,
@@ -192,6 +205,7 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
           ) : null}
 
           <TouchableOpacity
+            testID="loginButton"
             style={[styles.authButton, isLoading && styles.authButtonDisabled]}
             onPress={handleAuth}
             disabled={isLoading}

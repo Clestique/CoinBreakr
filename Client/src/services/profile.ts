@@ -109,6 +109,13 @@ class ProfileService {
     });
     return result;
   }
+
+  async deleteUserData(): Promise<{ success: boolean; message: string }> {
+    const result = await this.makeAuthedRequest<{ success: boolean; message: string }>('/users/deactivate-user', {
+      method: 'DELETE'
+    });
+    return result;
+  }
 }
 
 export const profileService = new ProfileService();
