@@ -2,6 +2,7 @@ const mongoose = require('mongoose');
 const User = require('../models/User');
 const PendingFriend = require('../models/PendingFriend');
 const Expense = require('../models/Expense');
+const Group = require('../models/Group');
 
 // Auth & User Profile
 const getUserProfile = async (req, res) => {
@@ -518,6 +519,32 @@ const convertPendingFriends = async (newUser) => {
     }
 };
 
+// Deactivate user account
+const deactivateUserData = async (req, res) => {
+    try {
+        const userId = req.userId;
+
+        // Set user account to inactive
+        await User.findByIdAndUpdate(userId, {
+            isActive: false,
+            updatedAt: new Date()
+        });
+
+        res.status(200).json({
+            success: true,
+            message: 'User account has been deactivated'
+        });
+
+    } catch (error) {
+        console.error('Deactivate user error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to deactivate user account',
+            error: error.message
+        });
+    }
+};
+
 module.exports = {
     getUserProfile,
     searchUsers,
@@ -528,5 +555,6 @@ module.exports = {
     getAllBalances,
     updateUserProfile,
     changePassword,
-    convertPendingFriends
+    convertPendingFriends,
+    deactivateUserData
 };

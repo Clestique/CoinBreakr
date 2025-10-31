@@ -244,9 +244,43 @@ const ProfileScreen: React.FC = () => {
 
   const handleAccountDeletion = () => {
     Alert.alert(
-      'Account Deletion',
-      'Account deletion functionality is not implemented yet.',
-      [{ text: 'OK' }]
+      'Delete Account',
+      'Are you sure you want to delete your account? This action will deactivate your account and cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete Account',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              setLoading(true);
+              const response = await profileService.deleteUserData();
+              
+              if (response.success) {
+                // Clear auth storage and redirect to login
+                await authStorage.clearAuth();
+                Alert.alert(
+                  'Account Deleted',
+                  response.message || 'Your account has been successfully deactivated.',
+                  [
+                    {
+                      text: 'OK',
+                      onPress: () => {
+                        navigation.reset({ index: 0, routes: [{ name: 'Auth' }] });
+                      }
+                    }
+                  ]
+                );
+              }
+            } catch (err: any) {
+              const errorMessage = err && err.success === false ? err.message : (err.message || 'Failed to delete account');
+              Alert.alert('Error', errorMessage);
+            } finally {
+              setLoading(false);
+            }
+          }
+        }
+      ]
     );
   };
 

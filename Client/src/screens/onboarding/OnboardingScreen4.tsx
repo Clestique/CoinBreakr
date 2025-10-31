@@ -17,7 +17,7 @@ const OnboardingScreen4: React.FC<OnboardingScreen4Props> = ({ navigation }) => 
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
-        <View style={styles.iconContainer}>
+        <View>
           <Image 
             source={require('../../../assets/adaptive-icon.png')} 
             style={styles.icon}
@@ -85,18 +85,10 @@ const styles = StyleSheet.create({
     paddingTop: 60,
     alignItems: 'center',
   },
-  iconContainer: {
+  icon: {
     width: 120,
     height: 120,
-    borderRadius: 60,
-    backgroundColor: colors.background.tertiary,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 40,
-  },
-  icon: {
-    width: 60,
-    height: 60,
+    marginBottom: 40
   },
   title: {
     fontSize: 28,

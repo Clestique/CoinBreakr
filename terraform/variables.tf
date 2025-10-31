@@ -49,12 +49,12 @@ variable "private_subnet_cidrs" {
   type        = list(string)
 }
 
-variable "domain_name" {
-  description = "Base domain name"
-  type        = string
-}
-
 variable "app_port" {
   description = "Application port"
   type        = number
+}
+
+variable "dns_zone_name" {
+  description = "DNS zone name"
+  type        = string
 }
