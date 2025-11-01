@@ -70,8 +70,9 @@ resource "google_compute_firewall" "allow_https" {
   target_tags   = ["coinbreakr-vm"]
 }
 
-resource "google_compute_firewall" "allow_app_port" {
-  name    = "${var.environment}-allow-app-port"
+# Allow load balancer health checks and traffic to app port
+resource "google_compute_firewall" "allow_lb_to_instances" {
+  name    = "${var.environment}-allow-lb-to-instances"
   network = google_compute_network.vpc_network.name
 
   allow {
@@ -79,8 +80,24 @@ resource "google_compute_firewall" "allow_app_port" {
     ports    = ["3000"]
   }
 
-  source_ranges = ["0.0.0.0/0"]
-  target_tags   = ["coinbreakr-vm"]
+  # Google Cloud Load Balancer source ranges
+  source_ranges = ["130.211.0.0/22", "35.191.0.0/16"]
+  target_tags   = ["lb-backend"]
+}
+
+# Allow load balancer to reach instances for health checks
+resource "google_compute_firewall" "allow_health_check" {
+  name    = "${var.environment}-allow-health-check"
+  network = google_compute_network.vpc_network.name
+
+  allow {
+    protocol = "tcp"
+    ports    = ["3000"]
+  }
+
+  # Health check source ranges
+  source_ranges = ["130.211.0.0/22", "35.191.0.0/16"]
+  target_tags   = ["lb-backend"]
 }
 
 # Get the latest Coinbreakr image
@@ -89,33 +106,7 @@ data "google_compute_image" "latest_coinbreakr" {
   project = var.project_id
 }
 
-# VM Instance in public subnet
-resource "google_compute_instance" "vm_instance" {
-  name         = var.instance_name
-  machine_type = var.machine_type
-  zone         = var.zones[0]
-
-  boot_disk {
-    initialize_params {
-      image = data.google_compute_image.latest_coinbreakr.self_link
-      size  = 20
-      type  = "pd-balanced"
-    }
-  }
-
-  network_interface {
-    subnetwork = google_compute_subnetwork.public_subnets[0].id
-    access_config {
-      # Ephemeral external IP
-    }
-  }
-
-  tags = ["coinbreakr-vm"]
-
-  service_account {
-    scopes = ["cloud-platform"]
-  }
-}
+# Note: Individual VM instance removed - now using managed instance groups for auto scaling
 
 # Outputs
 output "vpc_network_name" {
@@ -133,17 +124,7 @@ output "private_subnet_names" {
   value       = google_compute_subnetwork.private_subnets[*].name
 }
 
-output "instance_name" {
-  description = "Name of the created instance"
-  value       = google_compute_instance.vm_instance.name
-}
-
-output "instance_external_ip" {
-  description = "External IP address of the instance"
-  value       = google_compute_instance.vm_instance.network_interface[0].access_config[0].nat_ip
-}
-
-output "instance_internal_ip" {
-  description = "Internal IP address of the instance"
-  value       = google_compute_instance.vm_instance.network_interface[0].network_ip
+output "managed_instance_group" {
+  description = "Name of the managed instance group"
+  value       = google_compute_region_instance_group_manager.coinbreakr_group.name
 }

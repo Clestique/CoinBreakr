@@ -58,3 +58,13 @@ variable "dns_zone_name" {
   description = "DNS zone name"
   type        = string
 }
+
+variable "min_instances" {
+  description = "Minimum number of instances in auto scaling group"
+  type        = number
+}
+
+variable "max_instances" {
+  description = "Maximum number of instances in auto scaling group"
+  type        = number
+}

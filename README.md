@@ -75,17 +75,20 @@ Mobile app → API requests → Authentication → Business logic → Database o
 
 ### 4. **Cloud Infrastructure** (`terraform/`)
 ```
-Code deployment → Terraform provisioning → GCP resources → Application hosting → DNS routing
+Code deployment → Terraform provisioning → GCP resources → Load balancer → Auto scaling → DNS routing
 ```
 
-**Purpose**: Scalable cloud infrastructure
+**Purpose**: Scalable cloud infrastructure with high availability
 - **Technology**: Terraform, Google Cloud Platform
 - **Features**:
   - Multi-environment support (production/staging)
+  - **Global HTTP(S) Load Balancer** with SSL termination
+  - **Auto Scaling Groups** with health-based scaling
+  - **Managed SSL Certificates** for HTTPS security
   - VPC with public/private subnets
-  - Compute Engine instances
+  - **Instance Templates** for consistent deployments
   - Cloud DNS management
-  - Firewall and security rules
+  - Advanced firewall and security rules
   - Automated infrastructure deployment
 
 ## 🔄 Complete System Workflow
@@ -272,8 +275,10 @@ User Registration → JWT Token Generation → API Authentication → Resource A
 
 ### Infrastructure Features
 - ✅ Multi-environment support
-- ✅ Auto-scaling capabilities (planned)
-- ✅ Load balancing (planned)
+- ✅ **Auto-scaling capabilities** with CPU-based scaling
+- ✅ **Global Load Balancer** with SSL termination
+- ✅ **Managed SSL Certificates** for automatic HTTPS
+- ✅ **Health Checks** and auto-healing instances
 - ✅ Automated deployments
 - ✅ DNS management
 - ✅ Security and compliance
@@ -326,8 +331,8 @@ Code Push → Automated Tests → Build → Deploy → Health Checks → Monitor
 - [ ] Expense categories and budgeting
 
 ### Infrastructure Improvements
-- [ ] Auto-scaling implementation
-- [ ] Load balancer setup
+- ✅ **Auto-scaling implementation** (CPU-based with 2-10 instances)
+- ✅ **Load balancer setup** (Global HTTP(S) with SSL)
 - [ ] CDN integration
 - [ ] Advanced monitoring and alerting
 - [ ] Backup and disaster recovery

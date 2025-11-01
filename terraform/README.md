@@ -7,9 +7,11 @@ A comprehensive Terraform configuration for deploying application infrastructure
 This Terraform configuration provisions a complete cloud infrastructure for your application, including:
 
 - **Virtual Private Cloud (VPC)** with public and private subnets
-- **Compute Engine instances** for application hosting
+- **Global HTTP(S) Load Balancer** with SSL termination and auto-scaling
+- **Managed Instance Groups** with auto-healing and health checks
+- **Managed SSL Certificates** for automatic HTTPS security
 - **DNS management** with Cloud DNS for domain routing
-- **Firewall rules** for secure network access
+- **Advanced firewall rules** for secure network access
 - **Multi-environment support** (main/production and staging)
 
 ## ✨ Infrastructure Components
@@ -22,23 +24,38 @@ This Terraform configuration provisions a complete cloud infrastructure for your
 - **Firewall Rules**: Secure access control for SSH, HTTP, HTTPS, and application ports
 
 ### 🖥️ Compute Resources
-- **VM Instances**: Google Compute Engine instances running your application
-- **Custom Images**: Uses pre-built application images from specified families
+- **Managed Instance Groups**: Auto-scaling groups with 2-10 instances (main) or 1-5 instances (staging)
+- **Instance Templates**: Consistent VM configuration with custom images
+- **Auto Scaling**: CPU-based scaling with 70% utilization threshold
+- **Health Checks**: HTTP health checks on `/v1/healthz` endpoint
+- **Auto Healing**: Automatic replacement of unhealthy instances
 - **Machine Types**: Configurable instance sizes (default: e2-medium)
 - **Persistent Disks**: 20GB balanced persistent disks for storage
 
+### ⚖️ Load Balancer & SSL
+- **Global HTTP(S) Load Balancer**: High-performance load balancing
+- **SSL Termination**: Automatic SSL/TLS encryption at load balancer
+- **Managed SSL Certificates**: Google-managed certificates for your domains
+- **HTTP to HTTPS Redirect**: Automatic security redirect
+- **Backend Services**: Health-checked backend pools
+- **URL Mapping**: Flexible request routing
+
 ### 🌍 DNS Management
-- **Managed DNS Zone**: Cloud DNS zone for ${var.project_name}.${var.domain_name}
+- **Managed DNS Zone**: Cloud DNS zone for splitlyr.clestiq.com
 - **Environment-specific Records**: 
-  - Production: `api.${var.project_name}.${var.domain_name}`
-  - Staging: `staging.${var.project_name}.${var.domain_name}`
-- **Automatic IP Resolution**: DNS records automatically point to VM external IPs
+  - Production: `api.splitlyr.clestiq.com` → Load Balancer IP
+  - Staging: `staging.splitlyr.clestiq.com` → Load Balancer IP
+- **Load Balancer Integration**: DNS records point to global load balancer IP
+- **SSL Certificate Validation**: Automatic domain validation for SSL certificates
 
 ### 🔒 Security Features
 - **Network Segmentation**: Separate public and private subnets
-- **Firewall Rules**: Restrictive access control
+- **Load Balancer Security**: Only load balancer can reach backend instances
+- **SSL/TLS Encryption**: End-to-end encryption with managed certificates
+- **Firewall Rules**: Restrictive access control with load balancer source ranges
 - **Service Accounts**: Proper IAM roles and permissions
 - **Environment Isolation**: Separate resources per environment
+- **Health Check Security**: Secure health check endpoints
 
 ## 📁 Project Structure
 
@@ -47,7 +64,8 @@ terraform/
 ├── provider.tf              # GCP provider configuration and API enablement
 ├── versions.tf              # Terraform and provider version constraints
 ├── variables.tf             # Input variable definitions
-├── vpc.tf                   # VPC, subnets, firewall, and compute resources
+├── vpc.tf                   # VPC, subnets, firewall rules
+├── load_balancer.tf         # Load balancer, auto scaling, SSL certificates
 ├── dns.tf                   # DNS zone and record management
 ├── terraform.main.tfvars    # Production environment variables
 ├── terraform.staging.tfvars # Staging environment variables
@@ -175,6 +193,9 @@ image_family  = "${var.project_name}-staging-family"
 | `private_subnet_cidrs` | list(string) | Private subnet CIDR blocks | `["10.0.10.0/24", "10.0.20.0/24", "10.0.30.0/24"]` |
 | `domain_name` | string | Base domain name | `"example.com"` |
 | `app_port` | number | Application port | `3000` |
+| `min_instances` | number | Minimum instances in auto scaling group | `2` (main), `1` (staging) |
+| `max_instances` | number | Maximum instances in auto scaling group | `10` (main), `5` (staging) |
+| `dns_zone_name` | string | DNS zone name for domain management | `"splitlyr"` |
 
 ### Customization Guide
 
@@ -214,21 +235,21 @@ VPC Network (${var.vpc_cidr})
 ```
 
 ### Firewall Rules
-- **SSH Access**: Port 22 from anywhere (0.0.0.0/0)
-- **HTTP Access**: Port 80 from anywhere
-- **HTTPS Access**: Port 443 from anywhere
-- **Application Access**: Port ${var.app_port} from anywhere
-- **Target Tags**: `${var.project_name}-vm` for all rules
+- **SSH Access**: Port 22 from anywhere (0.0.0.0/0) to instances
+- **Load Balancer to Instances**: Port 3000 from Google Cloud Load Balancer ranges
+- **Health Check Access**: Port 3000 from Google Cloud health check ranges
+- **Target Tags**: `lb-backend` for load balancer traffic, `coinbreakr-vm` for SSH
 
 ## 🌍 DNS Configuration
 
 ### DNS Zone Management
-- **Zone Name**: `${var.project_name}.${var.domain_name}`
+- **Zone Name**: `splitlyr.clestiq.com`
 - **Environment-specific Records**:
-  - **Production**: `api.${var.project_name}.${var.domain_name}` → VM External IP
-  - **Staging**: `staging.${var.project_name}.${var.domain_name}` → VM External IP
+  - **Production**: `api.splitlyr.clestiq.com` → Load Balancer IP
+  - **Staging**: `staging.splitlyr.clestiq.com` → Load Balancer IP
 - **TTL**: 300 seconds for quick updates
-- **Automatic IP Resolution**: DNS records automatically use VM external IPs
+- **Load Balancer Integration**: DNS records automatically use global load balancer IP
+- **SSL Certificate Validation**: Domains automatically validated for SSL certificates
 
 ### DNS Outputs
 ```bash
@@ -248,22 +269,75 @@ terraform output dns_records
 | `vpc_network_name` | Name of the created VPC network |
 | `public_subnet_names` | Names of all public subnets |
 | `private_subnet_names` | Names of all private subnets |
-| `instance_name` | Name of the VM instance |
-| `instance_external_ip` | External IP address of the VM |
-| `instance_internal_ip` | Internal IP address of the VM |
-| `dns_nameservers` | DNS nameservers for the zone |
-| `dns_records` | Created DNS records information |
+| `managed_instance_group` | Name of the managed instance group |
+| `load_balancer_ip` | **Global load balancer IP address** |
+| `ssl_certificate_name` | Name of the managed SSL certificate |
+| `dns_records` | Created DNS records pointing to load balancer |
 
 ### Viewing Outputs
 ```bash
 # View all outputs
 terraform output
 
-# View specific output
-terraform output instance_external_ip
+# View load balancer IP
+terraform output load_balancer_ip
+
+# View SSL certificate status
+terraform output ssl_certificate_name
 
 # View outputs in JSON format
 terraform output -json
+```
+
+## ⚖️ Load Balancer & Auto Scaling Architecture
+
+### Traffic Flow
+```
+Internet → DNS → Global Load Balancer → SSL Termination → Backend Service → Instance Group → Instances (port 3000)
+```
+
+### Load Balancer Components
+- **Global HTTP(S) Load Balancer**: Handles incoming traffic from internet
+- **SSL Certificates**: Managed certificates for automatic HTTPS
+- **URL Maps**: Route requests to appropriate backend services
+- **Backend Services**: Health-checked pools of instances
+- **Health Checks**: HTTP checks on `/v1/healthz` endpoint every 15 seconds
+
+### Auto Scaling Configuration
+- **Instance Templates**: Consistent VM configuration with startup scripts
+- **Managed Instance Groups**: Regional groups for high availability
+- **Auto Scaling Policies**: CPU-based scaling at 70% utilization threshold
+- **Auto Healing**: Automatic replacement of failed instances after 5 minutes
+- **Scaling Limits**:
+  - **Production**: 2-10 instances
+  - **Staging**: 1-5 instances
+
+### SSL/TLS Security
+- **Managed SSL Certificates**: Automatically provisioned and renewed by Google
+- **HTTPS Enforcement**: HTTP traffic automatically redirected to HTTPS
+- **SSL Termination**: Encryption/decryption handled at load balancer level
+- **Certificate Validation**: Automatic domain validation using DNS
+
+### Health Monitoring
+- **Health Check Endpoint**: `/v1/healthz` on port 3000
+- **Check Frequency**: Every 15 seconds with 10-second timeout
+- **Healthy Threshold**: 2 consecutive successful checks
+- **Unhealthy Threshold**: 3 consecutive failed checks
+- **Auto Healing**: Unhealthy instances replaced automatically
+
+### Testing Your Load Balancer
+```bash
+# Test HTTPS endpoint (should work)
+curl https://staging.splitlyr.clestiq.com/v1/healthz
+
+# Test HTTP redirect (should redirect to HTTPS)
+curl -I http://staging.splitlyr.clestiq.com/v1/healthz
+
+# Check SSL certificate
+openssl s_client -connect staging.splitlyr.clestiq.com:443 -servername staging.splitlyr.clestiq.com
+
+# Monitor backend health
+gcloud compute backend-services get-health staging-coinbreakr-backend --global
 ```
 
 ## 🔧 Management Commands
