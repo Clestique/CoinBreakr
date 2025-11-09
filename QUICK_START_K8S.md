@@ -13,6 +13,10 @@ terraform apply -var-file="terraform.testing.tfvars" -auto-approve
 
 ### 2. Configure kubectl
 ```bash
+# Install GKE auth plugin (if not already installed)
+gcloud components install gke-gcloud-auth-plugin
+
+# Configure kubectl
 gcloud container clusters get-credentials coinbreakr-testing-cluster \
   --zone us-central1-a --project coinbreakr
 ```

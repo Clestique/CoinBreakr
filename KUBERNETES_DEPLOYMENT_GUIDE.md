@@ -21,6 +21,9 @@ This guide covers the complete setup for the **testing branch** which uses:
 # Install kubectl
 gcloud components install kubectl
 
+# Install GKE auth plugin (REQUIRED for kubectl to work with GKE)
+gcloud components install gke-gcloud-auth-plugin
+
 # Install Terraform
 # https://developer.hashicorp.com/terraform/downloads
 

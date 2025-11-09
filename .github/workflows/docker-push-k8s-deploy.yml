@@ -86,11 +86,18 @@ jobs:
           docker push ${{ steps.tags.outputs.IMAGE_TAG_TIMESTAMP }}
           echo "✅ Images pushed successfully"
 
+      - name: 🔧 Install GKE Auth Plugin
+        run: |
+          echo "🔌 Installing gke-gcloud-auth-plugin..."
+          gcloud components install gke-gcloud-auth-plugin --quiet
+
       - name: 🔧 Configure kubectl
         run: |
-          gcloud container clusters get-credentials ${{ env.GKE_CLUSTER }} \
-            --zone ${{ env.GCP_ZONE }} \
-            --project ${{ env.GCP_PROJECT_ID }}
+          echo "🔧 Configuring kubectl..."
+          gcloud container clusters get-credentials ${{ env.GKE_CLUSTER }} --zone ${{ env.GCP_ZONE }} --project ${{ env.GCP_PROJECT_ID }}
+          
+          echo "✅ kubectl configured"
+          kubectl version --client
 
       - name: 📋 Apply ConfigMap
         run: |

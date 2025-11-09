@@ -67,9 +67,14 @@ terraform apply -var-file="terraform.testing.tfvars"
 
 ### Step 2: Create Secrets (1 min)
 ```bash
+# Install GKE auth plugin
+gcloud components install gke-gcloud-auth-plugin
+
+# Configure kubectl
 gcloud container clusters get-credentials coinbreakr-testing-cluster \
   --zone us-central1-a --project coinbreakr
 
+# Create secrets
 kubectl create secret generic coinbreakr-secrets \
   --from-literal=mongo-url='YOUR_MONGO_URL' \
   --from-literal=jwt-secret='YOUR_JWT_SECRET'
