@@ -116,7 +116,6 @@ jobs:
           echo "🔄 Updating deployment with new image..."
           kubectl set image deployment/coinbreakr-api \
             api=${{ steps.tags.outputs.IMAGE_TAG_SHA }} \
-            --record
 
       - name: ⏳ Wait for Rollout
         run: |

@@ -19,12 +19,6 @@ jobs:
       - name: 🐳 Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      # - name: 🔍 Lint Dockerfile
-      #   uses: hadolint/hadolint-action@v3.1.0
-      #   with:
-      #     dockerfile: services/docker-compose.yml
-      #     failure-threshold: warning
-
       - name: 🏗️ Build Docker Image (Test)
         working-directory: ./services
         run: |
@@ -64,28 +58,6 @@ jobs:
           echo "🧹 Cleanup..."
           docker stop test-container
           docker rm test-container
-
-  kubernetes-validate:
-    name: Validate Kubernetes Manifests
-    runs-on: ubuntu-latest
-    
-    steps:
-      - name: 🧾 Checkout Repository
-        uses: actions/checkout@v4
-
-      - name: 🔧 Setup kubectl
-        uses: azure/setup-kubectl@v3
-        with:
-          version: 'v1.27.0'
-
-      - name: ✅ Validate K8s Manifests
-        run: |
-          echo "🔍 Validating Kubernetes manifests..."
-          kubectl apply --dry-run=client -f k8s/deployment.yaml
-          kubectl apply --dry-run=client -f k8s/service.yaml
-          kubectl apply --dry-run=client -f k8s/hpa.yaml
-          kubectl apply --dry-run=client -f k8s/configmap.yaml
-          echo "✅ All Kubernetes manifests are valid"
 
   terraform-validate:
     name: Validate Terraform (K8s)

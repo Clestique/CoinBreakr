@@ -25,9 +25,46 @@ This project consists of four main components that work together to provide a co
                                               │ GCP Deployment  │
                                               │ VPC & Networking│
                                               │ DNS Management  │
-                                              │ VM Instances    │
+                                              │ VM + Kubernetes │
                                               └─────────────────┘
 ```
+
+## 🚀 Deployment Architectures
+
+### Production & Staging (VM-based)
+```
+Internet → Load Balancer → VM Instances (2-10) → MongoDB
+           (SSL/TLS)        (Auto-scaling)
+```
+
+### Testing (Kubernetes-based) 🆕
+```
+Internet → Load Balancer → Kubernetes Pods (2-10) → MongoDB
+           (External IP)    (GKE Auto-scaling)
+           
+┌─────────────────────────────────────────────────────────────────┐
+│                    GKE Cluster Architecture                      │
+└─────────────────────────────────────────────────────────────────┘
+
+    Internet
+        │
+        ▼
+    Load Balancer (External IP)
+        │
+        ├─► Pod 1 (API:3000)
+        ├─► Pod 2 (API:3000)
+        └─► Pod N (API:3000)
+             │
+             ▼
+        Kubernetes Service
+             │
+        ┌────┴────┐
+        │         │
+    Node 1    Node N
+    (e2-medium)
+```
+
+**See [ARCHITECTURE_DIAGRAM.md](ARCHITECTURE_DIAGRAM.md) for detailed diagrams**
 
 ## 📱 User Journey & System Flow
 
@@ -188,11 +225,15 @@ Code deployment → Terraform provisioning → GCP resources → Load balancer �
 ### Prerequisites
 - Node.js 18+
 - Terraform 1.0+
-- Google Cloud SDK
+- Google Cloud SDK + gke-gcloud-auth-plugin
+- kubectl
+- Docker
 - Expo CLI
 - MongoDB (local or cloud)
 
-### 1. Infrastructure Setup
+### Option A: VM-based Deployment (Main/Staging)
+
+#### 1. Infrastructure Setup
 ```bash
 cd terraform
 terraform init
@@ -200,7 +241,7 @@ terraform plan -var-file="terraform.main.tfvars"
 terraform apply -var-file="terraform.main.tfvars"
 ```
 
-### 2. Backend Services
+#### 2. Backend Services
 ```bash
 cd services
 npm install
@@ -209,7 +250,49 @@ cp .env.example .env
 npm run dev
 ```
 
-### 3. Mobile Application
+### Option B: Kubernetes Deployment (Testing) 🆕
+
+#### 1. Deploy GKE Infrastructure
+```bash
+cd terraform-k8s
+terraform init
+terraform apply -var-file="terraform.testing.tfvars"
+```
+
+#### 2. Configure kubectl & Deploy
+```bash
+# Install auth plugin
+gcloud components install gke-gcloud-auth-plugin
+
+# Get cluster credentials
+gcloud container clusters get-credentials coinbreakr-testing-cluster \
+  --zone us-central1-a --project coinbreakr
+
+# Create secrets
+kubectl create secret generic coinbreakr-secrets \
+  --from-literal=mongo-url='YOUR_MONGO_URL' \
+  --from-literal=jwt-secret='YOUR_JWT_SECRET'
+
+# Deploy application
+cd ../k8s
+kubectl apply -f .
+
+# Get external IP
+kubectl get service coinbreakr-api-service
+```
+
+#### 3. Test Deployment
+```bash
+# Get IP and test
+EXTERNAL_IP=$(kubectl get service coinbreakr-api-service -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+curl http://$EXTERNAL_IP/v1/healthz
+```
+
+**📚 Full Kubernetes Guide**: See [START_HERE.md](START_HERE.md) or [KUBERNETES_DEPLOYMENT_GUIDE.md](KUBERNETES_DEPLOYMENT_GUIDE.md)
+
+### Mobile Application & Website
+
+#### 3. Mobile Application
 ```bash
 cd Client
 npm install
@@ -218,7 +301,7 @@ cp .env.example .env
 npm start
 ```
 
-### 4. Marketing Website
+#### 4. Marketing Website
 ```bash
 cd website
 npm install
@@ -299,14 +382,26 @@ User Registration → JWT Token Generation → API Authentication → Resource A
 - ✅ Health monitoring and logging
 
 ### Infrastructure Features
+
+#### VM-based (Main & Staging)
 - ✅ Multi-environment support
-- ✅ **Auto-scaling capabilities** with CPU-based scaling
+- ✅ **Auto-scaling capabilities** with CPU-based scaling (2-10 VMs)
 - ✅ **Global Load Balancer** with SSL termination
 - ✅ **Managed SSL Certificates** for automatic HTTPS
 - ✅ **Health Checks** and auto-healing instances
-- ✅ Automated deployments
-- ✅ DNS management
+- ✅ Automated deployments via Packer
+- ✅ DNS management with Cloud DNS
 - ✅ Security and compliance
+
+#### Kubernetes-based (Testing) 🆕
+- ✅ **GKE Cluster** with auto-scaling nodes (1-5)
+- ✅ **Horizontal Pod Autoscaler** (2-10 pods)
+- ✅ **Docker containerization** with Artifact Registry
+- ✅ **Rolling updates** with zero downtime
+- ✅ **Health checks** (liveness + readiness probes)
+- ✅ **Automated CI/CD** via GitHub Actions
+- ✅ **Load Balancer** with external IP
+- ✅ **Resource limits** and requests per pod
 
 ## 🔧 Development Workflow
 
@@ -326,10 +421,45 @@ feature/*       → Individual feature development
 Push to branch → Packer builds VM image → Terraform deploys → Load balancer routes traffic
 ```
 
+**Workflow**: `.github/workflows/packer-build.yml`
+
 #### Testing Branch (Kubernetes-based) 🆕
 ```
 PR to testing → Docker build test + security scan + K8s validation
-Merge to testing → Build Docker image → Push to Artifact Registry → Deploy to GKE → Health checks
+                ↓
+Merge to testing → Build Docker image → Push to Artifact Registry 
+                   → Deploy to GKE → Health checks
+```
+
+**Workflows**: 
+- `.github/workflows/docker-test.yml` (PR validation)
+- `.github/workflows/docker-push-k8s-deploy.yml` (Deployment)
+
+**Architecture Flow**:
+```
+Developer
+    │
+    │ git push origin testing
+    │
+    ▼
+GitHub Actions
+    │
+    ├─► Build Docker Image
+    ├─► Security Scan (Trivy)
+    ├─► Push to Artifact Registry
+    │   └─► us-central1-docker.pkg.dev/coinbreakr/coinbreakr-testing
+    │
+    ▼
+Deploy to GKE
+    │
+    ├─► Apply ConfigMap
+    ├─► Apply Deployment (2-10 pods)
+    ├─► Apply Service (LoadBalancer)
+    ├─► Apply HPA (Auto-scaling)
+    │
+    ▼
+Health Check
+    └─► curl http://EXTERNAL_IP/v1/healthz
 ```
 
 ### CI/CD Pipeline (Planned)
@@ -377,6 +507,77 @@ Code Push → Automated Tests → Build → Deploy → Health Checks → Monitor
 - [ ] Backup and disaster recovery
 - [ ] Multi-region deployment
 
+## 📋 Essential Commands
+
+### Kubernetes (Testing Environment)
+
+```bash
+# Get cluster status
+kubectl get all -l app=coinbreakr-api
+
+# View pods
+kubectl get pods -l app=coinbreakr-api
+
+# View logs
+kubectl logs -f deployment/coinbreakr-api
+
+# Get external IP
+kubectl get service coinbreakr-api-service
+
+# Check auto-scaling
+kubectl get hpa
+
+# Update deployment
+kubectl set image deployment/coinbreakr-api \
+  api=us-central1-docker.pkg.dev/coinbreakr/coinbreakr-testing/services:NEW_TAG
+
+# Rollback deployment
+kubectl rollout undo deployment/coinbreakr-api
+
+# Scale manually
+kubectl scale deployment coinbreakr-api --replicas=5
+
+# Restart deployment
+kubectl rollout restart deployment/coinbreakr-api
+
+# Get load balancer IP
+kubectl get service coinbreakr-api-service -o jsonpath='{.status.loadBalancer.ingress[0].ip}'
+
+# Test API
+curl http://$(kubectl get service coinbreakr-api-service -o jsonpath='{.status.loadBalancer.ingress[0].ip}')/v1/healthz
+```
+
+**Full Command Reference**: [COMMANDS_REFERENCE.md](COMMANDS_REFERENCE.md)  
+**Kubernetes Guide**: [k8s/README.md](k8s/README.md)
+
+### Terraform
+
+```bash
+# VM Infrastructure (Main/Staging)
+cd terraform
+terraform init
+terraform plan -var-file="terraform.main.tfvars"
+terraform apply -var-file="terraform.main.tfvars"
+
+# Kubernetes Infrastructure (Testing)
+cd terraform-k8s
+terraform init
+terraform plan -var-file="terraform.testing.tfvars"
+terraform apply -var-file="terraform.testing.tfvars"
+```
+
+### Docker
+
+```bash
+# Build image
+docker build -t coinbreakr-api:latest ./services
+
+# Push to Artifact Registry
+docker tag coinbreakr-api:latest \
+  us-central1-docker.pkg.dev/coinbreakr/coinbreakr-testing/services:latest
+docker push us-central1-docker.pkg.dev/coinbreakr/coinbreakr-testing/services:latest
+```
+
 ## 🤝 Contributing
 
 ### Development Setup
@@ -396,9 +597,41 @@ Code Push → Automated Tests → Build → Deploy → Health Checks → Monitor
 
 This project is proprietary software. All rights reserved.
 
+## 📚 Documentation
+
+### Getting Started
+- **[START_HERE.md](START_HERE.md)** - Quick start guide for Kubernetes
+- **[QUICK_START_K8S.md](QUICK_START_K8S.md)** - 5-minute Kubernetes setup
+- **[DEPLOYMENT_CHECKLIST.md](DEPLOYMENT_CHECKLIST.md)** - Step-by-step deployment
+
+### Architecture & Design
+- **[ARCHITECTURE_DIAGRAM.md](ARCHITECTURE_DIAGRAM.md)** - Visual architecture diagrams
+- **[WORKFLOW_COMPARISON.md](WORKFLOW_COMPARISON.md)** - VM vs Kubernetes comparison
+- **[IMPLEMENTATION_SUMMARY.md](IMPLEMENTATION_SUMMARY.md)** - What was built
+
+### Deployment Guides
+- **[KUBERNETES_DEPLOYMENT_GUIDE.md](KUBERNETES_DEPLOYMENT_GUIDE.md)** - Complete K8s guide
+- **[terraform-k8s/README.md](terraform-k8s/README.md)** - Terraform infrastructure
+- **[k8s/README.md](k8s/README.md)** - Kubernetes manifests with detailed commands
+- **[DNS_SETUP_GUIDE.md](DNS_SETUP_GUIDE.md)** - Domain and DNS configuration
+
+### Operations & Maintenance
+- **[COMMANDS_REFERENCE.md](COMMANDS_REFERENCE.md)** - Daily command reference
+- **[GITHUB_ACTIONS_SETUP.md](GITHUB_ACTIONS_SETUP.md)** - CI/CD configuration
+- **[GET_LOAD_BALANCER_IP.sh](GET_LOAD_BALANCER_IP.sh)** - Get K8s external IP (Bash)
+- **[GET_LOAD_BALANCER_IP.ps1](GET_LOAD_BALANCER_IP.ps1)** - Get K8s external IP (PowerShell)
+
+### Component Documentation
+- **[services/README.md](services/README.md)** - Backend API documentation
+- **[terraform/README.md](terraform/README.md)** - VM infrastructure documentation
+- **[Client/README.md](Client/README.md)** - Mobile app documentation
+- **[website/README.md](website/README.md)** - Marketing website documentation
+
 ---
 
 **Project Type**: Full-stack expense splitting platform  
 **Architecture**: Microservices with mobile-first approach  
-**Deployment**: Multi-environment cloud infrastructure  
-**Target Users**: Individuals and groups sharing expenses
+**Deployment**: Multi-environment cloud infrastructure (VM + Kubernetes)  
+**Target Users**: Individuals and groups sharing expenses  
+**Kubernetes**: ✅ Testing environment ready  
+**Auto-scaling**: ✅ Pods (2-10) + Nodes (1-5)
