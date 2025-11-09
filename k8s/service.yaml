@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: coinbreakr-api-service
+  labels:
+    app: coinbreakr-api
+    environment: testing
+  annotations:
+    cloud.google.com/neg: '{"ingress": true}'
+spec:
+  type: LoadBalancer
+  selector:
+    app: coinbreakr-api
+  ports:
+  - name: http
+    port: 80
+    targetPort: 3000
+    protocol: TCP
+  sessionAffinity: None
+  externalTrafficPolicy: Cluster

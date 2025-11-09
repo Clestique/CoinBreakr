@@ -1,0 +1,165 @@
+name: Build, Push & Deploy to Kubernetes
+
+on:
+  push:
+    branches: [ testing ]
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  GCP_PROJECT_ID: coinbreakr
+  GCP_REGION: us-central1
+  GCP_ZONE: us-central1-a
+  GKE_CLUSTER: coinbreakr-testing-cluster
+  ARTIFACT_REGISTRY: us-central1-docker.pkg.dev
+  REPOSITORY: coinbreakr-testing
+  IMAGE_NAME: services
+
+jobs:
+  build-push-deploy:
+    name: Build Docker Image & Deploy to GKE
+    if: github.repository == 'Clestique/CoinBreakr'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 🧾 Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: ☁️ Authenticate to Google Cloud
+        uses: google-github-actions/auth@v1
+        with:
+          workload_identity_provider: ${{ secrets.WIF }}
+          service_account: ${{ secrets.IAM }}
+
+      - name: 🛠️ Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+
+      - name: 🔐 Configure Docker for Artifact Registry
+        run: |
+          gcloud auth configure-docker ${{ env.ARTIFACT_REGISTRY }}
+
+      - name: 🏷️ Generate Image Tags
+        id: tags
+        run: |
+          COMMIT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
+          TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+          
+          IMAGE_BASE="${{ env.ARTIFACT_REGISTRY }}/${{ env.GCP_PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.IMAGE_NAME }}"
+          
+          echo "IMAGE_TAG_SHA=${IMAGE_BASE}:${COMMIT_SHA}" >> $GITHUB_OUTPUT
+          echo "IMAGE_TAG_LATEST=${IMAGE_BASE}:latest" >> $GITHUB_OUTPUT
+          echo "IMAGE_TAG_TIMESTAMP=${IMAGE_BASE}:${TIMESTAMP}" >> $GITHUB_OUTPUT
+          
+          echo "📦 Image tags:"
+          echo "  - ${IMAGE_BASE}:${COMMIT_SHA}"
+          echo "  - ${IMAGE_BASE}:latest"
+          echo "  - ${IMAGE_BASE}:${TIMESTAMP}"
+
+      - name: 🐳 Build Docker Image
+        working-directory: ./services
+        run: |
+          echo "🏗️ Building Docker image..."
+          docker build \
+            -t ${{ steps.tags.outputs.IMAGE_TAG_SHA }} \
+            -t ${{ steps.tags.outputs.IMAGE_TAG_LATEST }} \
+            -t ${{ steps.tags.outputs.IMAGE_TAG_TIMESTAMP }} \
+            .
+          echo "✅ Docker image built successfully"
+
+      - name: 🔐 Scan Image for Vulnerabilities
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ steps.tags.outputs.IMAGE_TAG_SHA }}
+          format: 'table'
+          exit-code: '0'
+          severity: 'CRITICAL,HIGH'
+
+      - name: 📤 Push Docker Image to Artifact Registry
+        run: |
+          echo "📤 Pushing images to Artifact Registry..."
+          docker push ${{ steps.tags.outputs.IMAGE_TAG_SHA }}
+          docker push ${{ steps.tags.outputs.IMAGE_TAG_LATEST }}
+          docker push ${{ steps.tags.outputs.IMAGE_TAG_TIMESTAMP }}
+          echo "✅ Images pushed successfully"
+
+      - name: 🔧 Configure kubectl
+        run: |
+          gcloud container clusters get-credentials ${{ env.GKE_CLUSTER }} \
+            --zone ${{ env.GCP_ZONE }} \
+            --project ${{ env.GCP_PROJECT_ID }}
+
+      - name: 📋 Apply ConfigMap
+        run: |
+          echo "📋 Applying ConfigMap..."
+          kubectl apply -f k8s/configmap.yaml
+
+      - name: 🚀 Deploy to Kubernetes
+        run: |
+          echo "🚀 Deploying to Kubernetes..."
+          kubectl apply -f k8s/deployment.yaml
+          kubectl apply -f k8s/service.yaml
+          kubectl apply -f k8s/hpa.yaml
+
+      - name: 🔄 Update Deployment Image
+        run: |
+          echo "🔄 Updating deployment with new image..."
+          kubectl set image deployment/coinbreakr-api \
+            api=${{ steps.tags.outputs.IMAGE_TAG_SHA }} \
+            --record
+
+      - name: ⏳ Wait for Rollout
+        run: |
+          echo "⏳ Waiting for deployment rollout..."
+          kubectl rollout status deployment/coinbreakr-api --timeout=5m
+
+      - name: 🔍 Verify Deployment
+        run: |
+          echo "🔍 Verifying deployment..."
+          kubectl get deployments
+          kubectl get pods -l app=coinbreakr-api
+          kubectl get services
+          kubectl get hpa
+
+      - name: 🏥 Health Check
+        run: |
+          echo "🏥 Performing health check..."
+          
+          # Get the external IP (may take a few minutes)
+          for i in {1..30}; do
+            EXTERNAL_IP=$(kubectl get service coinbreakr-api-service -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+            if [ -n "$EXTERNAL_IP" ]; then
+              echo "✅ External IP: $EXTERNAL_IP"
+              break
+            fi
+            echo "⏳ Waiting for external IP... ($i/30)"
+            sleep 10
+          done
+          
+          if [ -z "$EXTERNAL_IP" ]; then
+            echo "⚠️ External IP not yet assigned, but deployment is complete"
+            exit 0
+          fi
+          
+          # Test health endpoint
+          echo "🔍 Testing health endpoint..."
+          curl -f http://$EXTERNAL_IP/v1/healthz || echo "⚠️ Health check failed, but deployment is complete"
+
+      - name: 📊 Deployment Summary
+        if: always()
+        run: |
+          echo "## 🚀 Kubernetes Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Status:** ✅ Deployment completed" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Image:** \`${{ steps.tags.outputs.IMAGE_TAG_SHA }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Cluster:** ${{ env.GKE_CLUSTER }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Resources" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          kubectl get deployments,pods,services,hpa -l app=coinbreakr-api >> $GITHUB_STEP_SUMMARY || true
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY

@@ -1,0 +1,75 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: coinbreakr-api
+  labels:
+    app: coinbreakr-api
+    environment: testing
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: coinbreakr-api
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app: coinbreakr-api
+        environment: testing
+    spec:
+      containers:
+      - name: api
+        image: us-east1-docker.pkg.dev/coinbreakr/coinbreakr-testing/services:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 3000
+          name: http
+          protocol: TCP
+        env:
+        - name: NODE_ENV
+          value: "production"
+        - name: PORT
+          value: "3000"
+        - name: MONGO_URL
+          valueFrom:
+            secretKeyRef:
+              name: coinbreakr-secrets
+              key: mongo-url
+        - name: JWT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: coinbreakr-secrets
+              key: jwt-secret
+        - name: JWT_EXPIRES_IN
+          valueFrom:
+            configMapKeyRef:
+              name: coinbreakr-config
+              key: jwt-expires-in
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /v1/healthz
+            port: 3000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /v1/healthz
+            port: 3000
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+      restartPolicy: Always

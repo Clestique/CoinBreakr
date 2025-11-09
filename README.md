@@ -154,7 +154,7 @@ Code deployment → Terraform provisioning → GCP resources → Load balancer �
 │   ├── package.json             # Dependencies and scripts
 │   └── README.md                # Website documentation
 │
-├── terraform/                   # Infrastructure as Code
+├── terraform/                   # Infrastructure as Code (VM-based)
 │   ├── provider.tf              # GCP provider configuration
 │   ├── vpc.tf                   # Network and compute resources
 │   ├── dns.tf                   # Domain and DNS management
@@ -162,6 +162,23 @@ Code deployment → Terraform provisioning → GCP resources → Load balancer �
 │   ├── terraform.main.tfvars    # Production environment config
 │   ├── terraform.staging.tfvars # Staging environment config
 │   └── README.md                # Infrastructure documentation
+│
+├── terraform-k8s/               # Kubernetes Infrastructure (Testing)
+│   ├── provider.tf              # GCP and Kubernetes provider config
+│   ├── gke.tf                   # GKE cluster configuration
+│   ├── artifact-registry.tf     # Docker image registry
+│   ├── variables.tf             # Input variable definitions
+│   ├── outputs.tf               # Output values
+│   ├── terraform.testing.tfvars # Testing environment config
+│   └── README.md                # K8s infrastructure documentation
+│
+├── k8s/                         # Kubernetes Manifests (Testing)
+│   ├── deployment.yaml          # Application deployment
+│   ├── service.yaml             # LoadBalancer service
+│   ├── hpa.yaml                 # Horizontal Pod Autoscaler
+│   ├── configmap.yaml           # Configuration
+│   ├── secret-template.yaml     # Secret template
+│   └── README.md                # K8s deployment guide
 │
 └── README.md                    # This comprehensive overview
 ```
@@ -226,6 +243,14 @@ npm run dev
 - **Website**: Staging deployment for review
 - **Domain**: `staging.${domain}` for all services
 
+#### Testing Environment (NEW - Kubernetes)
+- **Infrastructure**: `terraform-k8s/terraform.testing.tfvars`
+- **Deployment**: Docker containers on GKE
+- **API**: Kubernetes deployment with auto-scaling (2-10 pods)
+- **Load Balancer**: Kubernetes LoadBalancer service
+- **Registry**: GCP Artifact Registry for Docker images
+- **Access**: External IP (no DNS configured)
+
 #### Development Environment
 - **Infrastructure**: Local or minimal cloud resources
 - **API**: Local MongoDB, development settings
@@ -287,10 +312,24 @@ User Registration → JWT Token Generation → API Authentication → Resource A
 
 ### Git Branch Strategy
 ```
-main branch     → Production deployments
-staging branch  → Staging environment testing
+main branch     → Production deployments (VM-based)
+staging branch  → Staging environment testing (VM-based)
+testing branch  → Testing environment (Kubernetes-based) 🆕
 dev branch      → Development and feature work
 feature/*       → Individual feature development
+```
+
+### Deployment Workflows
+
+#### Main & Staging Branches (VM-based)
+```
+Push to branch → Packer builds VM image → Terraform deploys → Load balancer routes traffic
+```
+
+#### Testing Branch (Kubernetes-based) 🆕
+```
+PR to testing → Docker build test + security scan + K8s validation
+Merge to testing → Build Docker image → Push to Artifact Registry → Deploy to GKE → Health checks
 ```
 
 ### CI/CD Pipeline (Planned)
