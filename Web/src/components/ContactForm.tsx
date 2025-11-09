@@ -180,9 +180,8 @@ export default function ContactForm({ apiUrl = process.env.NEXT_PUBLIC_API_URL }
             <option value="support">Technical Support</option>
             <option value="feature">Feature Request</option>
             <option value="bug">Bug Report</option>
-            <option value="expense-help">Expense Splitting Help</option>
             <option value="account">Account Issues</option>
-            <option value="partnership">Partnership</option>
+            <option value="partnership">Become a Tester</option>
             <option value="other">Other</option>
           </select>
         </div>
