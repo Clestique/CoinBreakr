@@ -78,6 +78,11 @@ jobs:
         with:
           version: 'v1.27.0'
 
+      - name: 🔧 Install GKE Auth Plugin
+        run: |
+          echo "🔌 Installing gke-gcloud-auth-plugin..."
+          gcloud components install gke-gcloud-auth-plugin --quiet
+          
       - name: ✅ Validate K8s Manifests
         run: |
           echo "🔍 Validating Kubernetes manifests..."
