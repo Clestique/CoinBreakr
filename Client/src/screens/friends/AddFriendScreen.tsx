@@ -9,10 +9,9 @@ import {
   Alert,
   ActivityIndicator,
   Image,
-  StatusBar,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { useSafeAreaInsets, SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import colors from '../../theme/colors';
 import { friendsService, Contact, AppUser } from '../../services/friends';
@@ -246,16 +245,10 @@ const AddFriendScreen: React.FC = () => {
     navigation.navigate('ReviewFriends', { pendingFriends });
   };
 
-
-
-
-
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar backgroundColor={colors.background.body} barStyle="light-content" />
-
+    <View style={styles.container}>
       {/* Header */}
-      <View style={[styles.header, { paddingTop: insets.top -1 }]}>
+      <View style={[styles.header, { paddingTop: insets.top + 15 }]}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <Ionicons name="arrow-back" size={24} color={colors.text.primary} />
         </TouchableOpacity>
@@ -398,7 +391,7 @@ const AddFriendScreen: React.FC = () => {
         onSubmit={handleAddPersonModalSubmit}
         initialQuery={searchQuery}
       />
-    </SafeAreaView>
+    </View>
   );
 };
 

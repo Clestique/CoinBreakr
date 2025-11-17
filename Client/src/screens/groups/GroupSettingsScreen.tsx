@@ -9,11 +9,10 @@ import {
   Alert,
   ActivityIndicator,
   Image,
-  StatusBar,
 } from 'react-native';
 import { RouteProp, useFocusEffect } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
-import { useSafeAreaInsets, SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import colors from '../../theme/colors';
 import { groupsService, Group } from '../../services/groups';
@@ -213,14 +212,10 @@ const GroupSettingsScreen: React.FC<GroupSettingsScreenProps> = ({ navigation, r
     );
   };
 
-
-
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar backgroundColor={colors.background.body} barStyle="light-content" />
-
+    <View style={styles.container}>
       {/* Header */}
-      <View style={[styles.header, { paddingTop: insets.top - 15 }]}>
+      <View style={[styles.header, { paddingTop: insets.top + 15 }]}>
         <TouchableOpacity
           style={styles.headerButton}
           onPress={() => navigation.goBack()}
@@ -437,7 +432,7 @@ const GroupSettingsScreen: React.FC<GroupSettingsScreenProps> = ({ navigation, r
           }
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 };
 

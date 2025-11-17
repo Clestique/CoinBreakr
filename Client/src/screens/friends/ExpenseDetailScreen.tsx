@@ -7,14 +7,13 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Image,
-  StatusBar,
   Alert,
   TextInput,
   Modal,
 
 } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import { useSafeAreaInsets, SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import colors from '../../theme/colors';
 import { getProfileImageUri } from '../../utils/defaultImage';
@@ -50,7 +49,7 @@ const ExpenseDetailScreen: React.FC = () => {
   // Safety check for expense data
   if (!initialExpense || !initialExpense._id) {
     return (
-      <SafeAreaView style={styles.container}>
+      <View style={styles.container}>
         <View style={styles.centered}>
           <Text style={styles.errorText}>Error: Expense data not found</Text>
           <TouchableOpacity
@@ -60,7 +59,7 @@ const ExpenseDetailScreen: React.FC = () => {
             <Text style={styles.backButtonText}>Go Back</Text>
           </TouchableOpacity>
         </View>
-      </SafeAreaView>
+      </View>
     );
   }
 
@@ -357,11 +356,9 @@ const ExpenseDetailScreen: React.FC = () => {
   const userPaid = expense.paidBy?._id === userId;
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar backgroundColor={colors.background.body} barStyle="light-content" />
-
+    <View style={styles.container}>
       {/* Header */}
-      <View style={[styles.header, { paddingTop: insets.top - 18 }]}>
+      <View style={[styles.header, { paddingTop: insets.top + 15 }]}>
         <TouchableOpacity
           style={styles.backButton}
           onPress={() => navigation.goBack()}
@@ -849,7 +846,7 @@ const ExpenseDetailScreen: React.FC = () => {
           <ActivityIndicator size="large" color={colors.primary[600]} />
         </View>
       )}
-    </SafeAreaView>
+    </View>
   );
 };
 
