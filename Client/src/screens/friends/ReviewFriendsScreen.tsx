@@ -364,7 +364,7 @@ const ReviewFriendsScreen: React.FC = () => {
               disabled={isAdding}
             >
               {isAdding ? (
-                <ActivityIndicator color={colors.background.primary} />
+                <ActivityIndicator color="#FFFFFF" />
               ) : (
                 <Text style={styles.addButtonText}>
                   Add Friends ({pendingFriends.length})

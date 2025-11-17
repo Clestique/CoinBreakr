@@ -127,7 +127,7 @@ const styles = StyleSheet.create({
   stepNumberText: {
     fontSize: 18,
     fontWeight: '700',
-    color: colors.background.primary,
+    color: '#FFFFFF',
   },
   stepContent: {
     flex: 1,
@@ -189,7 +189,7 @@ const styles = StyleSheet.create({
     marginLeft: 12,
   },
   nextButtonText: {
-    color: colors.background.primary,
+    color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '600',
   },

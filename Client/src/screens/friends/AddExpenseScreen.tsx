@@ -395,7 +395,7 @@ const AddExpenseScreen: React.FC = () => {
 
     return (
         <SafeAreaView style={styles.container}>
-            <StatusBar backgroundColor={colors.background.body} barStyle="dark-content" />
+            <StatusBar backgroundColor={colors.background.body} barStyle="light-content" />
 
             {/* Header */}
             <View style={[styles.header, { paddingTop: insets.top - 16 }]}>
@@ -470,6 +470,7 @@ const AddExpenseScreen: React.FC = () => {
                                 <TextInput
                                     style={styles.searchInput}
                                     placeholder="Search friends..."
+                                    placeholderTextColor={colors.text.quaternary}
                                     value={searchQuery}
                                     onChangeText={setSearchQuery}
                                     autoFocus
@@ -520,6 +521,7 @@ const AddExpenseScreen: React.FC = () => {
                         <TextInput
                             style={styles.textInput}
                             placeholder="Enter expense title"
+                            placeholderTextColor={colors.text.quaternary}
                             value={title}
                             onChangeText={setTitle}
                             maxLength={100}
@@ -531,6 +533,7 @@ const AddExpenseScreen: React.FC = () => {
                         <TextInput
                             style={[styles.textInput, styles.textArea]}
                             placeholder="Add a description (optional)"
+                            placeholderTextColor={colors.text.quaternary}
                             value={description}
                             onChangeText={setDescription}
                             multiline
@@ -546,6 +549,7 @@ const AddExpenseScreen: React.FC = () => {
                             <TextInput
                                 style={styles.amountInput}
                                 placeholder="0.00"
+                                placeholderTextColor={colors.text.quaternary}
                                 value={amount}
                                 onChangeText={setAmount}
                                 keyboardType="decimal-pad"
@@ -672,6 +676,7 @@ const AddExpenseScreen: React.FC = () => {
                                                     onChangeText={(value) => updateSplitPercentage(split.userId, value)}
                                                     keyboardType="decimal-pad"
                                                     placeholder="0"
+                                                    placeholderTextColor={colors.text.quaternary}
                                                 />
                                             ) : (
                                                 <TextInput
@@ -681,6 +686,7 @@ const AddExpenseScreen: React.FC = () => {
                                                     keyboardType="decimal-pad"
                                                     editable={splitType !== 'equal'}
                                                     placeholder="0"
+                                                    placeholderTextColor={colors.text.quaternary}
                                                 />
                                             )}
                                         </View>

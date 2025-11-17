@@ -123,7 +123,7 @@ const FriendsScreen: React.FC = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar backgroundColor={colors.background.body} barStyle="dark-content" />
+      <StatusBar backgroundColor={colors.background.body} barStyle="light-content" />
 
       {/* Header */}
       <View style={[styles.header, { paddingTop: insets.top - 15 }]}>
@@ -194,7 +194,7 @@ const FriendsScreen: React.FC = () => {
                   style={styles.addNewFriendButton}
                   onPress={navigateToAddFriend}
                 >
-                  <Ionicons name="person-add-outline" size={18} color={colors.background.primary} />
+                  <Ionicons name="person-add-outline" size={18} color="#FFFFFF" />
                   <Text style={styles.addNewFriendText}>Add new friend</Text>
                 </TouchableOpacity>
               </View>
@@ -251,7 +251,7 @@ const FriendsScreen: React.FC = () => {
                 style={styles.fabOption}
                 onPress={navigateToAddFriend}
               >
-                <Ionicons name="person-add" size={20} color={colors.background.primary} />
+                <Ionicons name="person-add" size={20} color="#FFFFFF" />
               </TouchableOpacity>
             </View>
 
@@ -262,7 +262,7 @@ const FriendsScreen: React.FC = () => {
                   style={styles.fabOption}
                   onPress={handleAddExpense}
                 >
-                  <Ionicons name="add" size={20} color={colors.background.primary} />
+                  <Ionicons name="add" size={20} color="#FFFFFF" />
                 </TouchableOpacity>
               </View>
             )}
@@ -277,7 +277,7 @@ const FriendsScreen: React.FC = () => {
           <Ionicons
             name={showFabOptions ? "close" : "add"}
             size={28}
-            color={colors.background.primary}
+            color="#FFFFFF"
           />
         </TouchableOpacity>
       </View>

@@ -92,7 +92,7 @@ const FriendDetailsScreen: React.FC = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar backgroundColor={colors.background.body} barStyle="dark-content" />
+      <StatusBar backgroundColor={colors.background.body} barStyle="light-content" />
 
       {/* Header */}
       <View style={[styles.header, { paddingTop: insets.top - 15 }]}>

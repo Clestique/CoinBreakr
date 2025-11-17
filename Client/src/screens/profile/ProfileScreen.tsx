@@ -347,7 +347,7 @@ const ProfileScreen: React.FC = () => {
                 />
                 {isEditing && (
                   <View style={styles.imageOverlay}>
-                    <Ionicons name="camera" size={20} color={colors.background.primary} />
+                    <Ionicons name="camera" size={20} color="#FFFFFF" />
                   </View>
                 )}
               </TouchableOpacity>
@@ -383,6 +383,7 @@ const ProfileScreen: React.FC = () => {
                   value={editForm.name}
                   onChangeText={(text) => setEditForm({ ...editForm, name: text })}
                   placeholder="Enter your name"
+                  placeholderTextColor={colors.text.quaternary}
                 />
               ) : (
                 <Text style={styles.fieldValue}>{profile?.name || 'Not set'}</Text>
@@ -397,6 +398,7 @@ const ProfileScreen: React.FC = () => {
                   value={editForm.phoneNumber}
                   onChangeText={(text) => setEditForm({ ...editForm, phoneNumber: text })}
                   placeholder="Enter your phone number"
+                  placeholderTextColor={colors.text.quaternary}
                   keyboardType="phone-pad"
                 />
               ) : (
@@ -413,7 +415,7 @@ const ProfileScreen: React.FC = () => {
                 disabled={saving}
               >
                 {saving ? (
-                  <ActivityIndicator color={colors.background.primary} size="small" />
+                  <ActivityIndicator color="#FFFFFF" size="small" />
                 ) : (
                   <Text style={styles.actionButtonText}>Save Details</Text>
                 )}
@@ -456,6 +458,7 @@ const ProfileScreen: React.FC = () => {
                   value={passwordForm.currentPassword}
                   onChangeText={(text) => setPasswordForm({ ...passwordForm, currentPassword: text })}
                   placeholder="Enter your current password"
+                  placeholderTextColor={colors.text.quaternary}
                   secureTextEntry
                   autoCapitalize="none"
                   autoCorrect={false}
@@ -472,6 +475,7 @@ const ProfileScreen: React.FC = () => {
                   value={passwordForm.newPassword}
                   onChangeText={(text) => setPasswordForm({ ...passwordForm, newPassword: text })}
                   placeholder="Enter new password (min. 6 characters)"
+                  placeholderTextColor={colors.text.quaternary}
                   secureTextEntry
                   autoCapitalize="none"
                   autoCorrect={false}
@@ -488,7 +492,7 @@ const ProfileScreen: React.FC = () => {
                   disabled={changingPassword || !passwordForm.currentPassword.trim() || !passwordForm.newPassword.trim()}
                 >
                   {changingPassword ? (
-                    <ActivityIndicator color={colors.background.primary} size="small" />
+                    <ActivityIndicator color="#FFFFFF" size="small" />
                   ) : (
                     <Text style={styles.actionButtonText}>Update</Text>
                   )}
@@ -701,7 +705,7 @@ const styles = StyleSheet.create({
   actionButtonText: {
     fontSize: 16,
     fontWeight: '600',
-    color: colors.background.primary,
+    color: '#FFFFFF',
   },
   cancelButtonText: {
     color: colors.text.primary,
@@ -798,7 +802,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   retryButtonText: {
-    color: colors.background.primary,
+    color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '600',
   },

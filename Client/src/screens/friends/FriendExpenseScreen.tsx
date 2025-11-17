@@ -274,7 +274,7 @@ const FriendExpenseScreen: React.FC = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar backgroundColor={colors.background.body} barStyle="dark-content" />
+      <StatusBar backgroundColor={colors.background.body} barStyle="light-content" />
 
       {/* Header */}
       <View style={[styles.header, { paddingTop: insets.top - 15 }]}>
@@ -373,7 +373,7 @@ const FriendExpenseScreen: React.FC = () => {
                           <Text style={styles.expenseTitle}>{expense.title}</Text>
                           {expense.group && (
                             <View style={styles.groupBadge}>
-                              <Ionicons name="people" size={14} color={colors.background.primary} />
+                              <Ionicons name="people" size={14} color="#FFFFFF" />
                             </View>
                           )}
                         </View>
@@ -435,7 +435,7 @@ const FriendExpenseScreen: React.FC = () => {
         }}
       >
         <View style={styles.fabContent}>
-          <Ionicons name="add" size={20} color={colors.background.primary} />
+          <Ionicons name="add" size={20} color="#FFFFFF" />
           <Text style={styles.fabText}>Add Expense</Text>
         </View>
       </TouchableOpacity>
@@ -522,7 +522,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 4,
   },
   actionButtonText: {
-    color: colors.background.primary,
+    color: '#FFFFFF',
     fontSize: 14,
     fontWeight: '600',
   },
@@ -659,7 +659,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   fabText: {
-    color: colors.background.primary,
+    color: '#FFFFFF',
     fontSize: 14,
     fontWeight: '600',
     marginLeft: 8,

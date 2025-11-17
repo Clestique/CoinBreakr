@@ -117,7 +117,7 @@ const GroupsScreen: React.FC = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar backgroundColor={colors.background.body} barStyle="dark-content" />
+      <StatusBar backgroundColor={colors.background.body} barStyle="light-content" />
 
       {/* Header */}
       <View style={[styles.header, { paddingTop: insets.top - 15 }]}>
@@ -174,7 +174,7 @@ const GroupsScreen: React.FC = () => {
                   style={styles.addNewGroupButton}
                   onPress={navigateToCreateGroup}
                 >
-                  <Ionicons name="add-outline" size={18} color={colors.background.primary} />
+                  <Ionicons name="add-outline" size={18} color="#FFFFFF" />
                   <Text style={styles.addNewGroupText}>Create new group</Text>
                 </TouchableOpacity>
               </View>
@@ -231,7 +231,7 @@ const GroupsScreen: React.FC = () => {
                 style={styles.fabOption}
                 onPress={navigateToCreateGroup}
               >
-                <Ionicons name="people" size={20} color={colors.background.primary} />
+                <Ionicons name="people" size={20} color="#FFFFFF" />
               </TouchableOpacity>
             </View>
 
@@ -242,7 +242,7 @@ const GroupsScreen: React.FC = () => {
                   style={styles.fabOption}
                   onPress={handleAddExpense}
                 >
-                  <Ionicons name="add" size={20} color={colors.background.primary} />
+                  <Ionicons name="add" size={20} color="#FFFFFF" />
                 </TouchableOpacity>
               </View>
             )}
@@ -257,7 +257,7 @@ const GroupsScreen: React.FC = () => {
           <Ionicons
             name={showFabOptions ? "close" : "add"}
             size={28}
-            color={colors.background.primary}
+            color="#FFFFFF"
           />
         </TouchableOpacity>
       </View>
@@ -365,7 +365,7 @@ const styles = StyleSheet.create({
   },
   addNewGroupText: {
     fontSize: 14,
-    color: colors.background.primary,
+    color: '#FFFFFF',
     fontWeight: '600',
     marginLeft: 8,
   },

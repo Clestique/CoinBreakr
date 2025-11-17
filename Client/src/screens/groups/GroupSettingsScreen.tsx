@@ -217,7 +217,7 @@ const GroupSettingsScreen: React.FC<GroupSettingsScreenProps> = ({ navigation, r
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar backgroundColor={colors.background.body} barStyle="dark-content" />
+      <StatusBar backgroundColor={colors.background.body} barStyle="light-content" />
 
       {/* Header */}
       <View style={[styles.header, { paddingTop: insets.top - 15 }]}>
@@ -616,7 +616,7 @@ const styles = StyleSheet.create({
   },
   leaveButtonText: {
     fontSize: 12,
-    color: colors.background.primary,
+    color: '#FFFFFF',
     fontWeight: '600',
   },
   actionButton: {

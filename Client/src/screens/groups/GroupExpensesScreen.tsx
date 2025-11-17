@@ -103,7 +103,7 @@ const GroupExpensesScreen: React.FC = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar backgroundColor={colors.background.body} barStyle="dark-content" />
+      <StatusBar backgroundColor={colors.background.body} barStyle="light-content" />
 
       {/* Header */}
       <View style={[styles.header, { paddingTop: insets.top - 15 }]}>
@@ -441,7 +441,7 @@ const styles = StyleSheet.create({
   addFirstExpenseText: {
     fontSize: 14,
     fontWeight: '600',
-    color: colors.background.primary,
+    color: '#FFFFFF',
   },
 });
 

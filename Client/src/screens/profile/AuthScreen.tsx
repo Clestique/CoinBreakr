@@ -214,7 +214,7 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
             disabled={isLoading}
           >
             {isLoading ? (
-              <ActivityIndicator color={colors.background.primary} size="small" />
+              <ActivityIndicator color="#FFFFFF" size="small" />
             ) : (
               <Text style={styles.authButtonText}>
                 {isLogin ? 'Sign In' : 'Sign Up'}
@@ -311,7 +311,7 @@ const styles = StyleSheet.create({
     opacity: 0.7,
   },
   authButtonText: {
-    color: colors.background.primary,
+    color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '600',
   },

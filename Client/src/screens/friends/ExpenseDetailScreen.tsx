@@ -358,7 +358,7 @@ const ExpenseDetailScreen: React.FC = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar backgroundColor={colors.background.body} barStyle="dark-content" />
+      <StatusBar backgroundColor={colors.background.body} barStyle="light-content" />
 
       {/* Header */}
       <View style={[styles.header, { paddingTop: insets.top - 18 }]}>
@@ -442,6 +442,7 @@ const ExpenseDetailScreen: React.FC = () => {
                     value={editForm.title}
                     onChangeText={(text) => setEditForm(prev => ({ ...prev, title: text }))}
                     placeholder="Enter expense title"
+                    placeholderTextColor={colors.text.quaternary}
                     maxLength={100}
                   />
                 </View>
@@ -465,6 +466,7 @@ const ExpenseDetailScreen: React.FC = () => {
                     value={editForm.amount}
                     onChangeText={(text) => setEditForm(prev => ({ ...prev, amount: text }))}
                     placeholder="0.00"
+                    placeholderTextColor={colors.text.quaternary}
                     keyboardType="decimal-pad"
                     maxLength={10}
                   />
@@ -495,6 +497,7 @@ const ExpenseDetailScreen: React.FC = () => {
                 value={editForm.description}
                 onChangeText={(text) => setEditForm(prev => ({ ...prev, description: text }))}
                 placeholder="Add a description (optional)"
+                placeholderTextColor={colors.text.quaternary}
                 multiline
                 numberOfLines={3}
                 maxLength={500}
@@ -715,6 +718,7 @@ const ExpenseDetailScreen: React.FC = () => {
                           onChangeText={(text) => updateSplitAmount(split.userId, text)}
                           keyboardType="decimal-pad"
                           placeholder="0.00"
+                          placeholderTextColor={colors.text.quaternary}
                         />
                       </View>
                     </View>

@@ -169,7 +169,7 @@ const styles = StyleSheet.create({
     marginLeft: 12,
   },
   getStartedButtonText: {
-    color: colors.background.primary,
+    color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '600',
   },

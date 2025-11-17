@@ -9,14 +9,12 @@
     "backgroundColor": "#F8FAFC",
     "newArchEnabled": true,
     "splash": {
-      "image": "./assets/splash-icon.png",
-      "resizeMode": "contain"
+      "image": "./assets/icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#FFFFFF"
     },
     "android": {
-      "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#F8FAFC"
-      },
+      "icon": "./assets/icon.png",
       "edgeToEdgeEnabled": true,
       "package": "com.clestiq.splitlyr.app",
       "predictiveBackGestureEnabled": false,

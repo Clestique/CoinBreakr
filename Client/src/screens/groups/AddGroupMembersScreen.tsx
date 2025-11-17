@@ -213,7 +213,7 @@ const AddGroupMembersScreen: React.FC<AddGroupMembersScreenProps> = ({ navigatio
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar backgroundColor={colors.background.body} barStyle="dark-content" />
+      <StatusBar backgroundColor={colors.background.body} barStyle="light-content" />
 
       {/* Header */}
       <View style={[styles.header, { paddingTop: insets.top - 15 }]}>
@@ -247,6 +247,7 @@ const AddGroupMembersScreen: React.FC<AddGroupMembersScreenProps> = ({ navigatio
                 <TextInput
                   style={styles.searchInput}
                   placeholder={selectedMembers.length > 0 ? "Add more..." : "Search by name, email, or phone"}
+                  placeholderTextColor={colors.text.quaternary}
                   value={searchQuery}
                   onChangeText={setSearchQuery}
                   multiline={false}
@@ -337,7 +338,7 @@ const AddGroupMembersScreen: React.FC<AddGroupMembersScreenProps> = ({ navigatio
             disabled={addingMembers}
           >
             {addingMembers ? (
-              <ActivityIndicator size="small" color={colors.background.primary} />
+              <ActivityIndicator size="small" color="#FFFFFF" />
             ) : (
               <Text style={styles.addButtonText}>
                 Add Members ({selectedMembers.length})
@@ -508,7 +509,7 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   addButtonText: {
-    color: colors.background.primary,
+    color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '600',
   },

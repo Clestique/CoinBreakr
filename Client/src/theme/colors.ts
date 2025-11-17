@@ -35,27 +35,27 @@ export const colors = {
     error: '#EF4444',
     info: '#3B82F6',
 
-    // Background colors
+    // Background colors - DARK THEME
     background: {
-        primary: '#FFFFFF',
-        secondary: '#F8FAFC', // Header background (syncs with notch)
-        tertiary: '#F1F5F9',  // Light background
-        body: '#F3F6F9',      // Main body background (more noticeably different)
+        primary: '#0F172A',      // Dark primary background
+        secondary: '#1E293B',    // Header background (syncs with notch)
+        tertiary: '#334155',     // Lighter dark background
+        body: '#1E293B',         // Main body background
     },
 
-    // Text colors
+    // Text colors - DARK THEME
     text: {
-        primary: '#0F172A',
-        secondary: '#334155',
-        tertiary: '#64748B',
-        quaternary: '#94A3B8',
+        primary: '#F8FAFC',      // Light text on dark
+        secondary: '#E2E8F0',    // Secondary light text
+        tertiary: '#CBD5E1',     // Tertiary light text
+        quaternary: '#94A3B8',   // Quaternary light text
     },
 
-    // Border colors
+    // Border colors - DARK THEME
     border: {
-        light: '#F1F5F9',
-        medium: '#E2E8F0',
-        dark: '#CBD5E1',
+        light: '#334155',        // Subtle dark border
+        medium: '#475569',       // Medium dark border
+        dark: '#64748B',         // Visible dark border
     }
 };
 

@@ -252,7 +252,7 @@ const AddFriendScreen: React.FC = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar backgroundColor={colors.background.body} barStyle="dark-content" />
+      <StatusBar backgroundColor={colors.background.body} barStyle="light-content" />
 
       {/* Header */}
       <View style={[styles.header, { paddingTop: insets.top -1 }]}>
@@ -286,6 +286,7 @@ const AddFriendScreen: React.FC = () => {
                 <TextInput
                   style={styles.searchInput}
                   placeholder={pendingFriends.length > 0 ? "Add more..." : "Search by name, email, or phone"}
+                  placeholderTextColor={colors.text.quaternary}
                   value={searchQuery}
                   onChangeText={setSearchQuery}
                   multiline={false}
