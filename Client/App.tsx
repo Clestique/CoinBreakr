@@ -22,8 +22,8 @@ export default function App() {
     <>
       <AppNavigator />
       <StatusBar 
-        style="dark" 
-        backgroundColor="#F8FAFC"
+        style="light" 
+        backgroundColor="#1E293B"
         translucent={Platform.OS === 'android'}
       />
     </>

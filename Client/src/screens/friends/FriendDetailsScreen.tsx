@@ -5,12 +5,11 @@ import {
   StyleSheet,
   TouchableOpacity,
   Image,
-  StatusBar,
   Alert,
   ActivityIndicator,
 } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import { useSafeAreaInsets, SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import colors from '../../theme/colors';
 import { getProfileImageUri } from '../../utils/defaultImage';
@@ -91,11 +90,9 @@ const FriendDetailsScreen: React.FC = () => {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar backgroundColor={colors.background.body} barStyle="dark-content" />
-
+    <View style={styles.container}>
       {/* Header */}
-      <View style={[styles.header, { paddingTop: insets.top - 15 }]}>
+      <View style={[styles.header, { paddingTop: insets.top + 15 }]}>
         <TouchableOpacity
           style={styles.backButton}
           onPress={() => navigation.goBack()}
@@ -153,7 +150,7 @@ const FriendDetailsScreen: React.FC = () => {
           <Text style={[styles.actionText, { color: '#EF4444' }]}>Report User</Text>
         </TouchableOpacity>
       </View>
-    </SafeAreaView>
+    </View>
   );
 };
 

@@ -124,6 +124,7 @@ const AddPersonModal: React.FC<AddPersonModalProps> = ({
                   value={name}
                   onChangeText={setName}
                   placeholder="Enter full name"
+                  placeholderTextColor={colors.text.quaternary}
                   autoCapitalize="words"
                 />
               </View>
@@ -135,6 +136,7 @@ const AddPersonModal: React.FC<AddPersonModalProps> = ({
                   value={email}
                   onChangeText={setEmail}
                   placeholder="Enter email address"
+                  placeholderTextColor={colors.text.quaternary}
                   keyboardType="email-address"
                   autoCapitalize="none"
                 />
@@ -147,6 +149,7 @@ const AddPersonModal: React.FC<AddPersonModalProps> = ({
                   value={phoneNumber}
                   onChangeText={setPhoneNumber}
                   placeholder="Enter phone number"
+                  placeholderTextColor={colors.text.quaternary}
                   keyboardType="phone-pad"
                 />
               </View>
@@ -224,6 +227,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     fontSize: 16,
+    color: colors.text.primary,
     borderWidth: 1,
     borderColor: colors.border.medium,
   },

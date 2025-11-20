@@ -8,11 +8,10 @@ import {
   TextInput,
   Alert,
   ActivityIndicator,
-  Image,
-  StatusBar
+  Image
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { useSafeAreaInsets, SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import colors from '../../theme/colors';
 import { getProfileImageUri } from '../../utils/defaultImage';
@@ -244,11 +243,9 @@ const CreateGroupScreen: React.FC = () => {
   const canCreateGroup = groupName.trim() && selectedMembers.length > 0;
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar backgroundColor={colors.background.body} barStyle="dark-content" />
-
+    <View style={styles.container}>
       {/* Header */}
-      <View style={[styles.header, { paddingTop: insets.top - 15 }]}>
+      <View style={[styles.header, { paddingTop: insets.top + 15 }]}>
         <TouchableOpacity
           style={styles.headerButton}
           onPress={() => navigation.goBack()}
@@ -493,7 +490,7 @@ const CreateGroupScreen: React.FC = () => {
           )}
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 };
 

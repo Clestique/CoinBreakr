@@ -9,11 +9,10 @@ import {
   Alert,
   ActivityIndicator,
   Image,
-  StatusBar,
 } from 'react-native';
 import { RouteProp } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
-import { useSafeAreaInsets, SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import colors from '../../theme/colors';
 import { friendsService } from '../../services/friends';
@@ -212,11 +211,9 @@ const AddGroupMembersScreen: React.FC<AddGroupMembersScreenProps> = ({ navigatio
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar backgroundColor={colors.background.body} barStyle="dark-content" />
-
+    <View style={styles.container}>
       {/* Header */}
-      <View style={[styles.header, { paddingTop: insets.top - 15 }]}>
+      <View style={[styles.header, { paddingTop: insets.top + 15 }]}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <Ionicons name="arrow-back" size={24} color={colors.text.primary} />
         </TouchableOpacity>
@@ -247,6 +244,7 @@ const AddGroupMembersScreen: React.FC<AddGroupMembersScreenProps> = ({ navigatio
                 <TextInput
                   style={styles.searchInput}
                   placeholder={selectedMembers.length > 0 ? "Add more..." : "Search by name, email, or phone"}
+                  placeholderTextColor={colors.text.quaternary}
                   value={searchQuery}
                   onChangeText={setSearchQuery}
                   multiline={false}
@@ -337,7 +335,7 @@ const AddGroupMembersScreen: React.FC<AddGroupMembersScreenProps> = ({ navigatio
             disabled={addingMembers}
           >
             {addingMembers ? (
-              <ActivityIndicator size="small" color={colors.background.primary} />
+              <ActivityIndicator size="small" color="#FFFFFF" />
             ) : (
               <Text style={styles.addButtonText}>
                 Add Members ({selectedMembers.length})
@@ -346,7 +344,7 @@ const AddGroupMembersScreen: React.FC<AddGroupMembersScreenProps> = ({ navigatio
           </TouchableOpacity>
         </View>
       )}
-    </SafeAreaView>
+    </View>
   );
 };
 
@@ -508,7 +506,7 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   addButtonText: {
-    color: colors.background.primary,
+    color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '600',
   },

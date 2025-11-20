@@ -12,7 +12,7 @@ import {
   Platform,
 } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import { useSafeAreaInsets, SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import colors from '../../theme/colors';
 import { friendsService } from '../../services/friends';
@@ -271,9 +271,8 @@ const ReviewFriendsScreen: React.FC = () => {
 
   return (
     <View style={styles.container}>
-      <SafeAreaView style={styles.safeArea}>
-        {/* Header */}
-        <View style={[styles.header, { paddingTop: insets.top + 2 }]}>
+      {/* Header */}
+      <View style={[styles.header, { paddingTop: insets.top + 15 }]}>
           <TouchableOpacity onPress={() => navigation.goBack()}>
             <Ionicons name="arrow-back" size={24} color={colors.text.primary} />
           </TouchableOpacity>
@@ -364,7 +363,7 @@ const ReviewFriendsScreen: React.FC = () => {
               disabled={isAdding}
             >
               {isAdding ? (
-                <ActivityIndicator color={colors.background.primary} />
+                <ActivityIndicator color="#FFFFFF" />
               ) : (
                 <Text style={styles.addButtonText}>
                   Add Friends ({pendingFriends.length})
@@ -391,7 +390,6 @@ const ReviewFriendsScreen: React.FC = () => {
             }}
           />
         )}
-      </SafeAreaView>
     </View>
   );
 };

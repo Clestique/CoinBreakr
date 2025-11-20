@@ -122,7 +122,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   nextButtonText: {
-    color: colors.background.primary,
+    color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '600',
   },

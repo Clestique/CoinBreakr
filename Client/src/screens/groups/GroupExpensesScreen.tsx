@@ -6,12 +6,11 @@ import {
   ScrollView,
   TouchableOpacity,
   ActivityIndicator,
-  StatusBar,
   RefreshControl,
   Alert,
 } from 'react-native';
 import { useNavigation, useRoute, useFocusEffect } from '@react-navigation/native';
-import { useSafeAreaInsets, SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import colors from '../../theme/colors';
 import { Group } from '../../services/groups';
@@ -93,20 +92,18 @@ const GroupExpensesScreen: React.FC = () => {
 
   if (loading) {
     return (
-      <SafeAreaView style={styles.container}>
+      <View style={styles.container}>
         <View style={styles.centered}>
           <ActivityIndicator size="large" color={colors.primary[600]} />
         </View>
-      </SafeAreaView>
+      </View>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar backgroundColor={colors.background.body} barStyle="dark-content" />
-
+    <View style={styles.container}>
       {/* Header */}
-      <View style={[styles.header, { paddingTop: insets.top - 15 }]}>
+      <View style={[styles.header, { paddingTop: insets.top + 15 }]}>
         <TouchableOpacity
           style={styles.headerButton}
           onPress={() => navigation.goBack()}
@@ -227,7 +224,7 @@ const GroupExpensesScreen: React.FC = () => {
           )}
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 };
 
@@ -441,7 +438,7 @@ const styles = StyleSheet.create({
   addFirstExpenseText: {
     fontSize: 14,
     fontWeight: '600',
-    color: colors.background.primary,
+    color: '#FFFFFF',
   },
 });
 
