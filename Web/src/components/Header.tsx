@@ -41,7 +41,7 @@ export default function Header() {
 
           <div className="hidden md:flex items-center space-x-4">
             <a
-              href="#download"
+              href="/#download"
               className="text-white px-4 py-2 rounded-lg transition-opacity font-medium hover:opacity-90"
               style={{ backgroundColor: '#14B8A6' }}
             >
